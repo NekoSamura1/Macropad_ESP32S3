@@ -1,0 +1,16 @@
+!.pio/
+.pio/*
+
+!.pio/build/
+.pio/build/*
+
+!.pio/build/*/
+.pio/build/*/*
+
+!.pio/build/*/*.bin
+!.pio/build/*/*.elf
+!.pio/build/*/*.map
+
+.vscode
+
+lib

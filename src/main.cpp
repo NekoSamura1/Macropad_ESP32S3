@@ -99,41 +99,40 @@ void handleScreen(void *args)
     // if (currTab)
     // {
     setBrightness(currMode == MODE_OFF ? 0 : brightness); // turn on/off the backlight
-
-    { //* Button state
+    switch (currMode)
+    {
+    case MODE_OFF:
+      setBrightness(0);
+      break;
+    case MODE_ON:
+      //* Button state
       for (size_t buttonRow = 0; buttonRow < 4; buttonRow++)
       {
         for (size_t buttonColumn = 0; buttonColumn < 4; buttonColumn++)
         {
           tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
-          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 11, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
-          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 10, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
         }
       }
-    }
 
-    { //* tab slider
+      //* tab slider
       if (currTab != 0)
       {
         tft.fillRect(0, 154, ((currTab) << 5) - 1, 5, TFT_DARKGREY);
       }
-
       tft.fillRect((currTab) << 5, 154, 32, 5, TFT_RED);
-
       if (currTab != 3)
       {
         tft.fillRect((currTab + 1) << 5, 154, (3 - currTab) << 5, 5, TFT_DARKGREY);
       }
+
+      break;
+    case MODE_SETTINGS:
+      setBrightness(0);
+      break;
+
+    default:
+      break;
     }
-    // }
-    // else
-    // {
-    //   if (ledcRead(0))
-    //   {
-    //     PRINTLN("power off");
-    //     setBrightness(0);
-    //   }
-    // }
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }

@@ -27,12 +27,15 @@
 
 #define BUTTON_POWER 12
 
+
+#define MACROS_COUNT_TAB 10
 enum TABS
 {
     TAB_A,
     TAB_B,
     TAB_C,
     TAB_D,
+    TAB_COUNT,
 };
 
 enum MODES
@@ -68,10 +71,21 @@ enum MODES
 #define DUMPFS()
 #endif
 
+
+struct macros_t
+{
+    std::string imageName = "";
+};
+
+
 //?##################################################################################
 //*         Globals
 uint_fast8_t currTab = TAB_A;
 uint_fast8_t currMode = MODE_ON;
+
+
+macros_t macros[4][MACROS_COUNT_TAB];
+
 
 //?##################################################################################
 //*         prototypes

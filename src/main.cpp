@@ -7,33 +7,33 @@ uint8_t brightness = 100;
 void setup(void)
 {
   //* start DEBUGSERIAL debugging
-
 #ifdef DEBUG
   DEBUGSERIAL.begin(115200);
-  PRINT("\t\tSetup");
 #endif
+  PRINT("\t\tSetup");
 
   //* start SPIFFS
-
   while (!SPIFFS.begin())
   {
     PRINTLN("SPIFFS SETUP PROBLEM");
     vTaskDelay(100);
   }
-
-#ifdef DEBUG
   DUMPFS();
-#endif
+
+  //* setup button pad
+
+  buttonStateInit();
+
+  //* init usb as hid
+  Mouse.begin();
+  Keyboard.begin();
+  USB.begin();
 
   //* setup backlight pwm
 
   pinMode(PIN_BACKLIGHT, OUTPUT);
   ledcSetup(0, 100000, 8);
   ledcAttachPin(PIN_BACKLIGHT, 0);
-
-  //* setup button pad
-
-  buttonStateInit();
 
   //* setup display
 
@@ -201,4 +201,14 @@ void debug(void *args)
     PRINTLN(ledcRead(0));
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
+}
+
+
+void macrosInit(){
+  macros
+}
+
+void lmbSpam()
+{
+  Mouse.click();
 }

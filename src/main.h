@@ -11,11 +11,16 @@
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <SPI.h>
 #include <SPIFFS.h>
-
 #include "ButtonPad/ButtonPad.h"
+
+#include "USB.h"
+#include "USBHIDMouse.h"
+#include "USBHIDKeyboard.h"
 
 //?##################################################################################
 //*         defines
+#ifdef ARDUINO_USB_MODE
+#endif
 
 #define PIN_BACKLIGHT 9
 
@@ -80,13 +85,13 @@ struct macros_t
 
 //?##################################################################################
 //*         Globals
-uint_fast8_t currTab = TAB_A;
-uint_fast8_t currMode = MODE_ON;
-
-
 macros_t macros[4][MACROS_COUNT_TAB];
 
+TABS currTab = TAB_A;
+MODES currMode = MODE_ON;
 
+USBHIDMouse Mouse;
+USBHIDKeyboard Keyboard;
 //?##################################################################################
 //*         prototypes
 void setBrightness(uint8_t brightness);

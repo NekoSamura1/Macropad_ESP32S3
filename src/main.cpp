@@ -1,6 +1,9 @@
 #include "main.h"
 
-#if USB_MODE
+#ifndef ARDUINO_USB_MODE
+#error This ESP32 SoC has no Native USB interface
+#elif ARDUINO_USB_MODE != 0
+#error Should be copiled when USB is in OTG mode
 #endif
 
 TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
@@ -57,7 +60,7 @@ void setup(void)
   xTaskCreate(
       handleScreen,
       "handleScreen",
-      2048,
+      4096,
       NULL,
       1,
       NULL);
@@ -73,7 +76,7 @@ void setup(void)
   xTaskCreate(
       mainSystem,
       "mainSystem",
-      2048,
+      32768,
       NULL,
       1,
       NULL);
@@ -191,7 +194,8 @@ void mainSystem(void *args)
         {
           if (macrosOnTabs[TAB_A][i] != nullptr)
           {
-            macrosOnTabs[TAB_A][i]->pokeMacro(macroNumToButtonNum(i));
+            macrosOnTabs[TAB_A][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_A][i]->runMacro();
           }
         }
         break;
@@ -199,21 +203,21 @@ void mainSystem(void *args)
       case TAB_B:
         for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
         {
-          macrosOnTabs[TAB_B][i]->pokeMacro(macroNumToButtonNum(i));
+          macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
         }
         break;
 
       case TAB_C:
         for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
         {
-          macrosOnTabs[TAB_C][i]->pokeMacro(macroNumToButtonNum(i));
+          macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
         }
         break;
 
       case TAB_D:
         for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
         {
-          macrosOnTabs[TAB_D][i]->pokeMacro(macroNumToButtonNum(i));
+          macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
         }
         break;
       default:
@@ -254,7 +258,7 @@ void macrosInit()
 
 int_fast8_t macroNumToButtonNum(int_fast8_t num)
 {
-  assert(num < MACROS_COUNT_ON_TAB and num >= 0);
+  assert(0 <= num and num < MACROS_COUNT_ON_TAB);
   switch (num)
   {
   case 9:

@@ -1,11 +1,14 @@
 #include "Macros.h"
 
+/// @brief
+/// @param setMacroItself function to run on tick
+/// @param setTogglable   does "poke" toggle macros
+/// @param setPeriod      uS period
 Macros::Macros(void (*setMacroItself)(), bool setTogglable, int64_t setPeriod)
 {
     macroItself = setMacroItself;
     togglable = setTogglable;
     period = setPeriod;
-    status = false;
 }
 
 Macros::~Macros()
@@ -25,7 +28,7 @@ uint_fast8_t Macros::pokeMacro(bool active)
 {
     if (togglable)
     {
-        status ^= active;
+        status ^= active and !previousPoke;
     }
     else
     {
@@ -36,5 +39,5 @@ uint_fast8_t Macros::pokeMacro(bool active)
 
 bool Macros::getStatus()
 {
-return status;
+    return status;
 }

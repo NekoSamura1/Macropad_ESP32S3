@@ -6,12 +6,14 @@
 class Macros
 {
 private:
-    bool status;
+    bool previousPoke = false;
+    bool status = false;
     bool togglable;
     void (*macroItself)();
     int64_t period;
 
 public:
+    Macros() = delete;
     Macros(void (*setMacroItself)(), bool setTogglable, int64_t period);
     ~Macros();
 

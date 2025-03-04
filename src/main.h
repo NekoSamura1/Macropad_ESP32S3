@@ -20,6 +20,7 @@
 #include "USBHIDMouse.h"
 #include "USBHIDKeyboard.h"
 
+
 //?##################################################################################
 //*         defines
 #ifdef ARDUINO_USB_MODE
@@ -122,12 +123,14 @@ int_fast8_t macroNumToButtonNum(int_fast8_t num);
 
 
 //?##################################################################################
-//*         macroses
+//*         macroses 
+void lmbSpam();
+
+//*         macroses on tabs
 
 Macros *macros_autoClickerLMB = new Macros(lmbSpam, false, 20000);
 Macros *macros_hold_autoClickerLMB = new Macros(lmbSpam, true, 20000);
 
-//*         macroses itself
-void lmbSpam();
+
 
 #pragma once

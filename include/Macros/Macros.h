@@ -3,17 +3,17 @@
 
 #include <stdint.h>
 
-class macros
+class Macros
 {
 private:
     bool status;
     bool togglable;
     void (*macroItself)();
-    uint64_t period;
+    int64_t period;
 
 public:
-    macros(void (*setMacroItself)(), bool setTogglable, uint64_t period);
-    ~macros();
+    Macros(void (*setMacroItself)(), bool setTogglable, int64_t period);
+    ~Macros();
 
     uint_fast8_t runMacro();
     uint_fast8_t pokeMacro(bool active);

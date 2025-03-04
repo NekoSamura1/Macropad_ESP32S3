@@ -1,8 +1,10 @@
 //?##################################################################################
 //*         Config
-#define DEBUG
-#define DEBUGSERIAL Serial0
+// #define DEBUG
 
+#ifdef DEBUG
+#define DEBUGSERIAL Serial0
+#endif
 //?##################################################################################
 //*         includes
 
@@ -12,6 +14,7 @@
 #include <SPI.h>
 #include <SPIFFS.h>
 #include "ButtonPad/ButtonPad.h"
+#include "Macros/Macros.h"
 
 #include "USB.h"
 #include "USBHIDMouse.h"
@@ -24,16 +27,29 @@
 
 #define PIN_BACKLIGHT 9
 
+#define MACROS_COUNT_ON_TAB 10
 
-#define BUTTON_A 3
-#define BUTTON_B 7
-#define BUTTON_C 11
-#define BUTTON_D 15
+enum BUTTONS
+{
+    BUTTON_1,
+    BUTTON_2,
+    BUTTON_3,
+    BUTTON_A,
+    BUTTON_4,
+    BUTTON_5,
+    BUTTON_6,
+    BUTTON_B,
+    BUTTON_7,
+    BUTTON_8,
+    BUTTON_9,
+    BUTTON_C,
+    BUTTON_STAR,
+    BUTTON_0,
+    BUTTON_BARS,
+    BUTTON_D,
+    BUTTON_COUNT,
+};
 
-#define BUTTON_POWER 12
-
-
-#define MACROS_COUNT_TAB 10
 enum TABS
 {
     TAB_A,
@@ -76,22 +92,21 @@ enum MODES
 #define DUMPFS()
 #endif
 
-
 struct macros_t
 {
     std::string imageName = "";
 };
 
-
 //?##################################################################################
 //*         Globals
-macros_t macros[4][MACROS_COUNT_TAB];
 
+Macros *macrosOnTabs[TAB_COUNT][MACROS_COUNT_ON_TAB]{};
 TABS currTab = TAB_A;
 MODES currMode = MODE_ON;
 
 USBHIDMouse Mouse;
 USBHIDKeyboard Keyboard;
+
 //?##################################################################################
 //*         prototypes
 void setBrightness(uint8_t brightness);
@@ -100,5 +115,19 @@ void handleButtons(void *args);
 void mainSystem(void *args);
 
 void debug(void *args);
+
+void macrosInit();
+
+int_fast8_t macroNumToButtonNum(int_fast8_t num);
+
+
+//?##################################################################################
+//*         macroses
+
+Macros *macros_autoClickerLMB = new Macros(lmbSpam, false, 20000);
+Macros *macros_hold_autoClickerLMB = new Macros(lmbSpam, true, 20000);
+
+//*         macroses itself
+void lmbSpam();
 
 #pragma once

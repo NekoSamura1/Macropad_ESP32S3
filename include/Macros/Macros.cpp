@@ -1,6 +1,6 @@
-#include "macros.h"
+#include "Macros.h"
 
-macros::macros(void (*setMacroItself)(), bool setTogglable, uint64_t setPeriod)
+Macros::Macros(void (*setMacroItself)(), bool setTogglable, int64_t setPeriod)
 {
     macroItself = setMacroItself;
     togglable = setTogglable;
@@ -8,11 +8,11 @@ macros::macros(void (*setMacroItself)(), bool setTogglable, uint64_t setPeriod)
     status = false;
 }
 
-macros::~macros()
+Macros::~Macros()
 {
 }
 
-uint_fast8_t macros::runMacro()
+uint_fast8_t Macros::runMacro()
 {
     if (status)
     {
@@ -21,7 +21,7 @@ uint_fast8_t macros::runMacro()
     return uint_fast8_t();
 }
 
-uint_fast8_t macros::pokeMacro(bool active)
+uint_fast8_t Macros::pokeMacro(bool active)
 {
     if (togglable)
     {
@@ -34,7 +34,7 @@ uint_fast8_t macros::pokeMacro(bool active)
     return uint_fast8_t(status);
 }
 
-bool macros::getStatus()
+bool Macros::getStatus()
 {
 return status;
 }

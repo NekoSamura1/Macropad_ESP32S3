@@ -1,9 +1,13 @@
 #include "main.h"
 
+#if USB_MODE
+#endif
+
 TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
 uint16_t buttonState = 0;
 
 uint8_t brightness = 100;
+
 void setup(void)
 {
   //* start DEBUGSERIAL debugging
@@ -28,6 +32,9 @@ void setup(void)
   Mouse.begin();
   Keyboard.begin();
   USB.begin();
+
+  //* initialize macroses
+  macrosInit();
 
   //* setup backlight pwm
 
@@ -171,10 +178,46 @@ void mainSystem(void *args)
       {
         currTab = TAB_D;
       }
-      else if (buttonState & 1 << BUTTON_POWER)
+      else if (buttonState & 1 << BUTTON_STAR)
       {
         currMode = MODE_OFF;
         PRINTLN("TRY TO TURN OFF");
+      }
+
+      switch (currTab) // macros activation
+      {
+      case TAB_A:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          if (macrosOnTabs[TAB_A][i] != nullptr)
+          {
+            macrosOnTabs[TAB_A][i]->pokeMacro(macroNumToButtonNum(i));
+          }
+        }
+        break;
+
+      case TAB_B:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          macrosOnTabs[TAB_B][i]->pokeMacro(macroNumToButtonNum(i));
+        }
+        break;
+
+      case TAB_C:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          macrosOnTabs[TAB_C][i]->pokeMacro(macroNumToButtonNum(i));
+        }
+        break;
+
+      case TAB_D:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          macrosOnTabs[TAB_D][i]->pokeMacro(macroNumToButtonNum(i));
+        }
+        break;
+      default:
+        break;
       }
       break;
     case MODE_SETTINGS:
@@ -182,7 +225,7 @@ void mainSystem(void *args)
       break;
 
     default:
-      if (buttonState and not(buttonState & 1 << BUTTON_POWER))
+      if (buttonState and not(buttonState & 1 << BUTTON_STAR))
       {
         PRINTLN("TRY TO TURN ON");
         currMode = MODE_ON;
@@ -203,9 +246,25 @@ void debug(void *args)
   }
 }
 
+void macrosInit()
+{
+  macrosOnTabs[TAB_A][0] = macros_autoClickerLMB;
+  macrosOnTabs[TAB_A][1] = macros_hold_autoClickerLMB;
+}
 
-void macrosInit(){
-  macros
+int_fast8_t macroNumToButtonNum(int_fast8_t num)
+{
+  assert(num < MACROS_COUNT_ON_TAB and num >= 0);
+  switch (num)
+  {
+  case 9:
+    num = BUTTON_0;
+    break;
+  default:
+    num = num * 4 / 3;
+    break;
+  }
+  return num;
 }
 
 void lmbSpam()

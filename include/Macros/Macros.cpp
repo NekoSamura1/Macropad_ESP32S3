@@ -2,12 +2,12 @@
 
 /// @brief
 /// @param setMacroItself function to run on tick
-/// @param setTogglable   does "poke" toggle macros
+/// @param setMacrosType   does "poke" toggle macros
 /// @param setPeriod      uS period
-Macros::Macros(void (*setMacroItself)(), bool setTogglable, int64_t setPeriod)
+Macros::Macros(void (*setMacroItself)(), MacrosType setMacrosType, int64_t setPeriod)
 {
     macroItself = setMacroItself;
-    togglable = setTogglable;
+    macrosType = setMacrosType;
     period = setPeriod;
 }
 
@@ -17,23 +17,38 @@ Macros::~Macros()
 
 uint_fast8_t Macros::runMacro()
 {
-    if (status)
+    switch (macrosType)
     {
-        macroItself();
+    case MACROS_CYCLIC:
+    case MACROS_CYCLIC_TOGGLE:
+        if (status and esp_timer_get_time() - timer > period)
+        {
+            timer = esp_timer_get_time();
+            macroItself();
+        }
+        break;
+    default:
+        break;
     }
     return uint_fast8_t();
 }
 
 uint_fast8_t Macros::pokeMacro(bool active)
 {
-    if (togglable)
+    switch (macrosType)
     {
-        status ^= active and !previousPoke;
-    }
-    else
-    {
+    case MACROS_CYCLIC:
         status = active;
+        break;
+    case MACROS_CYCLIC_TOGGLE:
+        status ^= active and !previousPoke;
+        break;
+    case MACROS_HOLD_TOGGLE:
+    default:
+    return 3; //error wrong mode
+        break;
     }
+
     return uint_fast8_t(status);
 }
 

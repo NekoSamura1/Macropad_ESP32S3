@@ -3,18 +3,28 @@
 
 #include <stdint.h>
 
+enum MacrosType
+{
+    MACROS_CYCLIC,
+    MACROS_CYCLIC_TOGGLE,
+    MACROS_ONCE,
+    MACROS_HOLD,
+    MACROS_HOLD_TOGGLE,
+};
+
 class Macros
 {
 private:
+    MacrosType macrosType;
     bool previousPoke = false;
     bool status = false;
-    bool togglable;
-    void (*macroItself)();
+    int64_t timer = 0;
     int64_t period;
+    void (*macroItself)();
 
 public:
     Macros() = delete;
-    Macros(void (*setMacroItself)(), bool setTogglable, int64_t period);
+    Macros(void (*setMacroItself)(), MacrosType setTogglable, int64_t period);
     ~Macros();
 
     uint_fast8_t runMacro();

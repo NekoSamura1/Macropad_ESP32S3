@@ -2,9 +2,6 @@
 //*         Config
 // #define DEBUG
 
-#ifdef DEBUG
-#define DEBUGSERIAL Serial0
-#endif
 //?##################################################################################
 //*         includes
 
@@ -20,14 +17,23 @@
 #include "USBHIDMouse.h"
 #include "USBHIDKeyboard.h"
 
+//?##################################################################################
+//*         preprocessor
+#ifdef DEBUG
+#define DEBUGSERIAL Serial0
+#endif
+
+#ifndef ARDUINO_USB_MODE
+#error This ESP32 SoC has no Native USB interface
+#elif ARDUINO_USB_MODE != 0
+#error Should be copiled when USB is in OTG mode
+#endif
 
 //?##################################################################################
 //*         defines
-#ifdef ARDUINO_USB_MODE
-#endif
 
+#define MS_TO_US 1000
 #define PIN_BACKLIGHT 9
-
 #define MACROS_COUNT_ON_TAB 10
 
 enum BUTTONS
@@ -121,16 +127,17 @@ void macrosInit();
 
 int_fast8_t macroNumToButtonNum(int_fast8_t num);
 
+//?##################################################################################
+//*         macroses itself
+void lmbSpam();
+void rmbSpam();
+
 
 //?##################################################################################
-//*         macroses 
-void lmbSpam();
-
-//*         macroses on tabs
-
-Macros *macros_autoClickerLMB = new Macros(lmbSpam, false, 20000);
-Macros *macros_hold_autoClickerLMB = new Macros(lmbSpam, true, 20000);
-
-
+//*         macroses variants
+Macros *macros_autoClickerLMB = new Macros(lmbSpam, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros *macros_hold_autoClickerLMB = new Macros(lmbSpam, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros *macros_autoClickerRMB = new Macros(rmbSpam, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros *macros_hold_autoClickerRMB = new Macros(rmbSpam, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
 
 #pragma once

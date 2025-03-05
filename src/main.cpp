@@ -1,10 +1,5 @@
 #include "main.h"
 
-#ifndef ARDUINO_USB_MODE
-#error This ESP32 SoC has no Native USB interface
-#elif ARDUINO_USB_MODE != 0
-#error Should be copiled when USB is in OTG mode
-#endif
 
 TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
 uint16_t buttonState = 0;
@@ -273,5 +268,15 @@ int_fast8_t macroNumToButtonNum(int_fast8_t num)
 
 void lmbSpam()
 {
-  Mouse.click();
+  Mouse.click(MOUSE_LEFT);
 }
+
+void rmbSpam()
+{
+  Mouse.click(MOUSE_RIGHT);
+}
+
+// void plusW()
+// {
+//   Keyboard.
+// }

@@ -100,9 +100,8 @@ void handleScreen(void *args)
 {
   for (;;)
   {
-    // if (currTab)
-    // {
     setBrightness(currMode == MODE_OFF ? 0 : brightness); // turn on/off the backlight
+
     switch (currMode)
     {
     case MODE_OFF:
@@ -114,7 +113,25 @@ void handleScreen(void *args)
       {
         for (size_t buttonColumn = 0; buttonColumn < 4; buttonColumn++)
         {
-          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
+          
+          bool currMacsosState = false;
+          int_fast8_t buttonID, macrosID;
+          buttonID = buttonRow * 4 + buttonColumn;
+          macrosID = buttonNumToMacrosNum(buttonID);
+
+          if (macrosID != -1)
+          {
+            if (macrosOnTabs[currTab][macrosID] != nullptr)
+            {
+              currMacsosState = macrosOnTabs[currTab][macrosID]->getStatus();
+            }
+            
+          }
+          
+          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 11, currMacsosState ? TFT_GREEN : TFT_RED); //display macroses state
+          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 10, currMacsosState ? TFT_GREEN : TFT_RED);
+          
+          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED); //display buttons state
         }
       }
 
@@ -188,7 +205,7 @@ void mainSystem(void *args)
         {
           if (macrosOnTabs[TAB_A][i] != nullptr)
           {
-            macrosOnTabs[TAB_A][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_A][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
             macrosOnTabs[TAB_A][i]->runMacro();
           }
         }
@@ -199,7 +216,7 @@ void mainSystem(void *args)
         {
           if (macrosOnTabs[TAB_B][i] != nullptr)
           {
-            macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
             macrosOnTabs[TAB_B][i]->runMacro();
           }
         }
@@ -210,7 +227,7 @@ void mainSystem(void *args)
         {
           if (macrosOnTabs[TAB_C][i] != nullptr)
           {
-            macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
             macrosOnTabs[TAB_C][i]->runMacro();
           }
         }
@@ -221,7 +238,7 @@ void mainSystem(void *args)
         {
           if (macrosOnTabs[TAB_D][i] != nullptr)
           {
-            macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
             macrosOnTabs[TAB_D][i]->runMacro();
           }
         }
@@ -258,15 +275,17 @@ void debug(void *args)
 
 void macrosInit()
 {
-  macrosOnTabs[TAB_A][0] = macros_autoClickerLMB;
-  macrosOnTabs[TAB_A][3] = macros_toggle_autoClickerLMB;
-  macrosOnTabs[TAB_A][1] = macros_autoClickerRMB;
-  macrosOnTabs[TAB_A][4] = macros_toggle_autoClickerRMB;
-  macrosOnTabs[TAB_A][2] = macros_plusW;
-  macrosOnTabs[TAB_A][5] = macros_toggle_plusW;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_1)] = macros_autoClickerLMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_4)] = macros_toggle_autoClickerLMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_2)] = macros_autoClickerRMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_5)] = macros_toggle_autoClickerRMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_3)] = macros_plusW;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_6)] = macros_toggle_plusW;
 }
 
-int_fast8_t macroNumToButtonNum(int_fast8_t num)
+//?##################################################################################
+//*         convert functions
+int_fast8_t macrosNumToButtonNum(int_fast8_t num)
 {
   assert(0 <= num and num < MACROS_COUNT_ON_TAB);
   switch (num)
@@ -281,6 +300,35 @@ int_fast8_t macroNumToButtonNum(int_fast8_t num)
   return num;
 }
 
+int_fast8_t buttonNumToMacrosNum(int_fast8_t num)
+{
+  assert(0 <= num and num < 16);
+  switch (num)
+  {
+  case BUTTON_0:
+    num = 9;
+    break;
+  case BUTTON_1:
+  case BUTTON_2:
+  case BUTTON_3:
+  case BUTTON_4:
+  case BUTTON_5:
+  case BUTTON_6:
+  case BUTTON_7:
+  case BUTTON_8:
+  case BUTTON_9:
+    num = (num + 2) * 3 / 4 - 1;
+    break;
+  default:
+    num = -1;
+    break;
+  }
+  return num;
+}
+
+
+//?##################################################################################
+//*         macroses itself
 void lmbSpam()
 {
   Mouse.click(MOUSE_LEFT);
@@ -298,5 +346,5 @@ void plusW()
 
 void minusW()
 {
-  Keyboard.press('w');
+  Keyboard.release('w');
 }

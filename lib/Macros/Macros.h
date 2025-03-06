@@ -18,12 +18,11 @@ class Macros
 private:
     MacrosType macrosType;
     void (*macrosItself)();
-
-    /// @brief used only in HOLD modes
-    void (*macrosOnStop)() = nullptr;
+    void (*macrosOnStop)() = nullptr; //used only in HOLD modes
     int64_t timer = 0;
     int64_t period;
-    bool previous = false;
+    bool previousStatus = false;
+    bool previousPoke = false;
     bool status = false;
 
 public:

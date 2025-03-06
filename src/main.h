@@ -125,7 +125,8 @@ void debug(void *args);
 
 void macrosInit();
 
-int_fast8_t macroNumToButtonNum(int_fast8_t num);
+int_fast8_t macrosNumToButtonNum(int_fast8_t num);
+int_fast8_t buttonNumToMacrosNum(int_fast8_t num);
 
 //?##################################################################################
 //*         macroses itself

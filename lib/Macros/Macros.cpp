@@ -24,6 +24,21 @@ uint_fast8_t Macros::runMacro()
             macrosItself();
         }
         break;
+    case MACROS_HOLD:
+    case MACROS_HOLD_TOGGLE:
+        if (status != previousStatus)
+        {
+            if (status)
+            {
+                macrosItself();
+            }
+            else
+            {
+                macrosOnStop();
+            }
+        }
+        previousStatus = status; // used as prevuousState
+        break;
     default:
         return 1;
         break;
@@ -35,41 +50,14 @@ uint_fast8_t Macros::pokeMacro(const bool active)
 {
     switch (macrosType)
     {
+    case MACROS_HOLD:
     case MACROS_CYCLIC:
         status = active;
         break;
-    case MACROS_CYCLIC_TOGGLE:
-        status ^= active and !previous;
-        previous = active;
-        break;
-    case MACROS_HOLD:
-        status = active;
-        if (status!=previous){
-            if (status)
-            {
-                macrosItself();
-            }
-            else
-            {
-                macrosOnStop();
-            }
-        }
-        previous = status; // used as prevuousState
-        break;
     case MACROS_HOLD_TOGGLE:
-        status ^= active and !previous;
-        if (active and !previous)
-        {
-            if (status)
-            {
-                macrosItself();
-            }
-            else
-            {
-                macrosOnStop();
-            }
-        }
-        previous = active;
+    case MACROS_CYCLIC_TOGGLE:
+        status ^= active and !previousPoke;
+        previousPoke = active;
         break;
     default:
         return 3; // error wrong mode

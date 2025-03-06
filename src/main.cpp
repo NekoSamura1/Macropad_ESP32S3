@@ -1,6 +1,5 @@
 #include "main.h"
 
-
 TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
 uint16_t buttonState = 0;
 
@@ -99,7 +98,7 @@ void setBrightness(uint8_t brightness)
 
 void handleScreen(void *args)
 {
-  while (1)
+  for (;;)
   {
     // if (currTab)
     // {
@@ -145,7 +144,7 @@ void handleScreen(void *args)
 
 void handleButtons(void *args)
 {
-  while (1)
+  for (;;)
   {
     buttonStateUpdate(&buttonState);
     vTaskDelay(1 / portTICK_PERIOD_MS);
@@ -154,7 +153,7 @@ void handleButtons(void *args)
 
 void mainSystem(void *args)
 {
-  while (1)
+  for (;;)
   {
 
     switch (currMode)
@@ -198,21 +197,33 @@ void mainSystem(void *args)
       case TAB_B:
         for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
         {
-          macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+          if (macrosOnTabs[TAB_B][i] != nullptr)
+          {
+            macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_B][i]->runMacro();
+          }
         }
         break;
 
       case TAB_C:
         for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
         {
-          macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+          if (macrosOnTabs[TAB_C][i] != nullptr)
+          {
+            macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_C][i]->runMacro();
+          }
         }
         break;
 
       case TAB_D:
         for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
         {
-          macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+          if (macrosOnTabs[TAB_D][i] != nullptr)
+          {
+            macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macroNumToButtonNum(i));
+            macrosOnTabs[TAB_D][i]->runMacro();
+          }
         }
         break;
       default:
@@ -237,7 +248,7 @@ void mainSystem(void *args)
 
 void debug(void *args)
 {
-  while (1)
+  for (;;)
   {
     PRINT("ledcRead(0)");
     PRINTLN(ledcRead(0));
@@ -248,7 +259,11 @@ void debug(void *args)
 void macrosInit()
 {
   macrosOnTabs[TAB_A][0] = macros_autoClickerLMB;
-  macrosOnTabs[TAB_A][1] = macros_hold_autoClickerLMB;
+  macrosOnTabs[TAB_A][3] = macros_toggle_autoClickerLMB;
+  macrosOnTabs[TAB_A][1] = macros_autoClickerRMB;
+  macrosOnTabs[TAB_A][4] = macros_toggle_autoClickerRMB;
+  macrosOnTabs[TAB_A][2] = macros_plusW;
+  macrosOnTabs[TAB_A][5] = macros_toggle_plusW;
 }
 
 int_fast8_t macroNumToButtonNum(int_fast8_t num)
@@ -276,7 +291,12 @@ void rmbSpam()
   Mouse.click(MOUSE_RIGHT);
 }
 
-// void plusW()
-// {
-//   Keyboard.
-// }
+void plusW()
+{
+  Keyboard.press('w');
+}
+
+void minusW()
+{
+  Keyboard.press('w');
+}

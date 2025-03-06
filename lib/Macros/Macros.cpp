@@ -1,12 +1,9 @@
 #include "Macros.h"
 
-/// @brief
-/// @param setMacroItself function to run on tick
-/// @param setMacrosType   does "poke" toggle macros
-/// @param setPeriod      uS period
-Macros::Macros(void (*setMacroItself)(), MacrosType setMacrosType, int64_t setPeriod)
+Macros::Macros(void (*setMacrosItself)(), void (*setMacrosOnStop)(), MacrosType setMacrosType, int64_t setPeriod)
 {
-    macroItself = setMacroItself;
+    macrosItself = setMacrosItself;
+    macrosOnStop = setMacrosOnStop;
     macrosType = setMacrosType;
     period = setPeriod;
 }
@@ -24,18 +21,17 @@ uint_fast8_t Macros::runMacro()
         if (status and esp_timer_get_time() - timer > period)
         {
             timer = esp_timer_get_time();
-            macroItself();
+            macrosItself();
         }
         break;
     default:
-    
-    return 0;
+        return 1;
         break;
     }
     return 0;
 }
 
-uint_fast8_t Macros::pokeMacro(bool active)
+uint_fast8_t Macros::pokeMacro(const bool active)
 {
     switch (macrosType)
     {
@@ -43,11 +39,40 @@ uint_fast8_t Macros::pokeMacro(bool active)
         status = active;
         break;
     case MACROS_CYCLIC_TOGGLE:
-        status ^= active and !previousPoke;
+        status ^= active and !previous;
+        previous = active;
+        break;
+    case MACROS_HOLD:
+        status = active;
+        if (status!=previous){
+            if (status)
+            {
+                macrosItself();
+            }
+            else
+            {
+                macrosOnStop();
+            }
+        }
+        previous = status; // used as prevuousState
         break;
     case MACROS_HOLD_TOGGLE:
+        status ^= active and !previous;
+        if (active and !previous)
+        {
+            if (status)
+            {
+                macrosItself();
+            }
+            else
+            {
+                macrosOnStop();
+            }
+        }
+        previous = active;
+        break;
     default:
-    return 3; //error wrong mode
+        return 3; // error wrong mode
         break;
     }
 

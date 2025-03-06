@@ -17,19 +17,28 @@ class Macros
 {
 private:
     MacrosType macrosType;
-    bool previousPoke = false;
-    bool status = false;
+    void (*macrosItself)();
+
+    /// @brief used only in HOLD modes
+    void (*macrosOnStop)() = nullptr;
     int64_t timer = 0;
     int64_t period;
-    void (*macroItself)();
+    bool previous = false;
+    bool status = false;
 
 public:
     Macros() = delete;
-    Macros(void (*setMacroItself)(), MacrosType setTogglable, int64_t period);
+
+    /// @brief
+    /// @param setMacrosItself function to run on tick
+    /// @param setMacrosOnStop used in HOLD modes to unpress pressed keys
+    /// @param setMacrosType   does "poke" toggle macros
+    /// @param setPeriod      uS period
+    Macros(void (*setMacrosItself)(), void (*setMacrosOnStop)(), MacrosType setMacrosType, int64_t setPeriod);
     ~Macros();
 
     uint_fast8_t runMacro();
-    uint_fast8_t pokeMacro(bool active);
+    uint_fast8_t pokeMacro(const bool active);
     bool getStatus();
 };
 

@@ -129,15 +129,19 @@ int_fast8_t macroNumToButtonNum(int_fast8_t num);
 
 //?##################################################################################
 //*         macroses itself
-void lmbSpam();
-void rmbSpam();
+void lmbSpam(); // just click LMB
+void rmbSpam(); // just click RMB
 
+void plusW();  // press w
+void minusW(); // unpress w
 
 //?##################################################################################
 //*         macroses variants
-Macros *macros_autoClickerLMB = new Macros(lmbSpam, MACROS_CYCLIC, 20 * MS_TO_US);
-Macros *macros_hold_autoClickerLMB = new Macros(lmbSpam, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
-Macros *macros_autoClickerRMB = new Macros(rmbSpam, MACROS_CYCLIC, 20 * MS_TO_US);
-Macros *macros_hold_autoClickerRMB = new Macros(rmbSpam, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros *macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros *macros_toggle_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros *macros_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros *macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
+Macros *macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
 
 #pragma once

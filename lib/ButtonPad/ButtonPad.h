@@ -16,5 +16,6 @@
 
 void buttonStateInit();
 void buttonStateUpdate(uint16_t *state);
-#include "ButtonPad.cpp"
+
+// #include "ButtonPad.cpp"
 #endif // BUTTONPAD_H

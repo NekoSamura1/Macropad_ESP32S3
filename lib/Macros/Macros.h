@@ -2,6 +2,7 @@
 #define MACROS_H
 
 #include <stdint.h>
+#include <esp_timer.h>
 
 enum MacrosType
 {
@@ -32,5 +33,5 @@ public:
     bool getStatus();
 };
 
-#include "Macros.cpp"
+// #include "Macros.cpp"
 #endif // MACROS_H

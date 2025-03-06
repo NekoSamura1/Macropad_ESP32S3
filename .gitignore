@@ -26,3 +26,5 @@ lib/TFT_eSPI-2.5.43/Tools
 lib/TFT_eSPI-2.5.43/.*
 lib/TFT_eSPI-2.5.43/README*
 
+!lib/ButtonPad/
+!lib/Macros/

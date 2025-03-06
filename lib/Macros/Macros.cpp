@@ -28,9 +28,11 @@ uint_fast8_t Macros::runMacro()
         }
         break;
     default:
+    
+    return 0;
         break;
     }
-    return uint_fast8_t();
+    return 0;
 }
 
 uint_fast8_t Macros::pokeMacro(bool active)

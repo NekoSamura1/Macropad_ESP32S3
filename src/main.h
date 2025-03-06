@@ -10,8 +10,8 @@
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <SPI.h>
 #include <SPIFFS.h>
-#include "ButtonPad/ButtonPad.h"
-#include "Macros/Macros.h"
+#include "ButtonPad.h"
+#include "Macros.h"
 
 #include "USB.h"
 #include "USBHIDMouse.h"

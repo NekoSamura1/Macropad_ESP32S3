@@ -1,7 +1,6 @@
 //?##################################################################################
 //*         Config
-#define DEBUG
-#define DEBUGSERIAL Serial0
+// #define DEBUG
 
 //?##################################################################################
 //*         includes
@@ -11,21 +10,52 @@
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <SPI.h>
 #include <SPIFFS.h>
+#include "ButtonPad.h"
+#include "Macros.h"
 
-#include "ButtonPad/ButtonPad.h"
+#include "USB.h"
+#include "USBHIDMouse.h"
+#include "USBHIDKeyboard.h"
+
+//?##################################################################################
+//*         preprocessor
+#ifdef DEBUG
+#define DEBUGSERIAL Serial0
+#endif
+
+#ifndef ARDUINO_USB_MODE
+#error This ESP32 SoC has no Native USB interface
+#elif ARDUINO_USB_MODE != 0
+#error Should be copiled when USB is in OTG mode
+#endif
 
 //?##################################################################################
 //*         defines
 
+#define MS_TO_US 1000
 #define PIN_BACKLIGHT 9
+#define MACROS_COUNT_ON_TAB 10
 
-
-#define BUTTON_A 3
-#define BUTTON_B 7
-#define BUTTON_C 11
-#define BUTTON_D 15
-
-#define BUTTON_POWER 12
+enum BUTTONS
+{
+    BUTTON_1,
+    BUTTON_2,
+    BUTTON_3,
+    BUTTON_A,
+    BUTTON_4,
+    BUTTON_5,
+    BUTTON_6,
+    BUTTON_B,
+    BUTTON_7,
+    BUTTON_8,
+    BUTTON_9,
+    BUTTON_C,
+    BUTTON_STAR,
+    BUTTON_0,
+    BUTTON_BARS,
+    BUTTON_D,
+    BUTTON_COUNT,
+};
 
 enum TABS
 {
@@ -33,6 +63,7 @@ enum TABS
     TAB_B,
     TAB_C,
     TAB_D,
+    TAB_COUNT,
 };
 
 enum MODES
@@ -68,10 +99,20 @@ enum MODES
 #define DUMPFS()
 #endif
 
+struct macros_t
+{
+    std::string imageName = "";
+};
+
 //?##################################################################################
 //*         Globals
-uint_fast8_t currTab = TAB_A;
-uint_fast8_t currMode = MODE_ON;
+
+Macros *macrosOnTabs[TAB_COUNT][MACROS_COUNT_ON_TAB]{};
+TABS currTab = TAB_A;
+MODES currMode = MODE_ON;
+
+USBHIDMouse Mouse;
+USBHIDKeyboard Keyboard;
 
 //?##################################################################################
 //*         prototypes
@@ -81,5 +122,27 @@ void handleButtons(void *args);
 void mainSystem(void *args);
 
 void debug(void *args);
+
+void macrosInit();
+
+int_fast8_t macrosNumToButtonNum(int_fast8_t num);
+int_fast8_t buttonNumToMacrosNum(int_fast8_t num);
+
+//?##################################################################################
+//*         macroses itself
+void lmbSpam(); // just click LMB
+void rmbSpam(); // just click RMB
+
+void plusW();  // press w
+void minusW(); // unpress w
+
+//?##################################################################################
+//*         macroses variants
+Macros *macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros *macros_toggle_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros *macros_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros *macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
+Macros *macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
 
 #pragma once

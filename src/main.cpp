@@ -4,36 +4,40 @@ TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
 uint16_t buttonState = 0;
 
 uint8_t brightness = 100;
+
 void setup(void)
 {
   //* start DEBUGSERIAL debugging
-
 #ifdef DEBUG
   DEBUGSERIAL.begin(115200);
-  PRINT("\t\tSetup");
 #endif
+  PRINT("\t\tSetup");
 
   //* start SPIFFS
-
   while (!SPIFFS.begin())
   {
     PRINTLN("SPIFFS SETUP PROBLEM");
     vTaskDelay(100);
   }
-
-#ifdef DEBUG
   DUMPFS();
-#endif
+
+  //* setup button pad
+
+  buttonStateInit();
+
+  //* init usb as hid
+  Mouse.begin();
+  Keyboard.begin();
+  USB.begin();
+
+  //* initialize macroses
+  macrosInit();
 
   //* setup backlight pwm
 
   pinMode(PIN_BACKLIGHT, OUTPUT);
   ledcSetup(0, 100000, 8);
   ledcAttachPin(PIN_BACKLIGHT, 0);
-
-  //* setup button pad
-
-  buttonStateInit();
 
   //* setup display
 
@@ -50,7 +54,7 @@ void setup(void)
   xTaskCreate(
       handleScreen,
       "handleScreen",
-      2048,
+      4096,
       NULL,
       1,
       NULL);
@@ -66,7 +70,7 @@ void setup(void)
   xTaskCreate(
       mainSystem,
       "mainSystem",
-      2048,
+      32768,
       NULL,
       1,
       NULL);
@@ -94,46 +98,62 @@ void setBrightness(uint8_t brightness)
 
 void handleScreen(void *args)
 {
-  while (1)
+  for (;;)
   {
-    // if (currTab)
-    // {
     setBrightness(currMode == MODE_OFF ? 0 : brightness); // turn on/off the backlight
 
-    { //* Button state
+    switch (currMode)
+    {
+    case MODE_OFF:
+      setBrightness(0);
+      break;
+    case MODE_ON:
+      //* Button state
       for (size_t buttonRow = 0; buttonRow < 4; buttonRow++)
       {
         for (size_t buttonColumn = 0; buttonColumn < 4; buttonColumn++)
         {
-          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
-          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 11, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
-          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 10, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED);
+          
+          bool currMacsosState = false;
+          int_fast8_t buttonID, macrosID;
+          buttonID = buttonRow * 4 + buttonColumn;
+          macrosID = buttonNumToMacrosNum(buttonID);
+
+          if (macrosID != -1)
+          {
+            if (macrosOnTabs[currTab][macrosID] != nullptr)
+            {
+              currMacsosState = macrosOnTabs[currTab][macrosID]->getStatus();
+            }
+            
+          }
+          
+          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 11, currMacsosState ? TFT_GREEN : TFT_RED); //display macroses state
+          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow, 10, currMacsosState ? TFT_GREEN : TFT_RED);
+          
+          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED); //display buttons state
         }
       }
-    }
 
-    { //* tab slider
+      //* tab slider
       if (currTab != 0)
       {
         tft.fillRect(0, 154, ((currTab) << 5) - 1, 5, TFT_DARKGREY);
       }
-
       tft.fillRect((currTab) << 5, 154, 32, 5, TFT_RED);
-
       if (currTab != 3)
       {
         tft.fillRect((currTab + 1) << 5, 154, (3 - currTab) << 5, 5, TFT_DARKGREY);
       }
+
+      break;
+    case MODE_SETTINGS:
+      setBrightness(0);
+      break;
+
+    default:
+      break;
     }
-    // }
-    // else
-    // {
-    //   if (ledcRead(0))
-    //   {
-    //     PRINTLN("power off");
-    //     setBrightness(0);
-    //   }
-    // }
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
@@ -141,7 +161,7 @@ void handleScreen(void *args)
 
 void handleButtons(void *args)
 {
-  while (1)
+  for (;;)
   {
     buttonStateUpdate(&buttonState);
     vTaskDelay(1 / portTICK_PERIOD_MS);
@@ -150,7 +170,7 @@ void handleButtons(void *args)
 
 void mainSystem(void *args)
 {
-  while (1)
+  for (;;)
   {
 
     switch (currMode)
@@ -172,10 +192,59 @@ void mainSystem(void *args)
       {
         currTab = TAB_D;
       }
-      else if (buttonState & 1 << BUTTON_POWER)
+      else if (buttonState & 1 << BUTTON_STAR)
       {
         currMode = MODE_OFF;
         PRINTLN("TRY TO TURN OFF");
+      }
+
+      switch (currTab) // macros activation
+      {
+      case TAB_A:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          if (macrosOnTabs[TAB_A][i] != nullptr)
+          {
+            macrosOnTabs[TAB_A][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
+            macrosOnTabs[TAB_A][i]->runMacro();
+          }
+        }
+        break;
+
+      case TAB_B:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          if (macrosOnTabs[TAB_B][i] != nullptr)
+          {
+            macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
+            macrosOnTabs[TAB_B][i]->runMacro();
+          }
+        }
+        break;
+
+      case TAB_C:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          if (macrosOnTabs[TAB_C][i] != nullptr)
+          {
+            macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
+            macrosOnTabs[TAB_C][i]->runMacro();
+          }
+        }
+        break;
+
+      case TAB_D:
+        for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++)
+        {
+          if (macrosOnTabs[TAB_D][i] != nullptr)
+          {
+            macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
+            macrosOnTabs[TAB_D][i]->runMacro();
+          }
+        }
+        break;
+      default:
+        break;
       }
       break;
     case MODE_SETTINGS:
@@ -183,7 +252,7 @@ void mainSystem(void *args)
       break;
 
     default:
-      if (buttonState and not(buttonState & 1 << BUTTON_POWER))
+      if (buttonState and not(buttonState & 1 << BUTTON_STAR))
       {
         PRINTLN("TRY TO TURN ON");
         currMode = MODE_ON;
@@ -196,10 +265,86 @@ void mainSystem(void *args)
 
 void debug(void *args)
 {
-  while (1)
+  for (;;)
   {
     PRINT("ledcRead(0)");
     PRINTLN(ledcRead(0));
     vTaskDelay(500 / portTICK_PERIOD_MS);
   }
+}
+
+void macrosInit()
+{
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_1)] = macros_autoClickerLMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_4)] = macros_toggle_autoClickerLMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_2)] = macros_autoClickerRMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_5)] = macros_toggle_autoClickerRMB;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_3)] = macros_plusW;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_6)] = macros_toggle_plusW;
+}
+
+//?##################################################################################
+//*         convert functions
+int_fast8_t macrosNumToButtonNum(int_fast8_t num)
+{
+  assert(0 <= num and num < MACROS_COUNT_ON_TAB);
+  switch (num)
+  {
+  case 9:
+    num = BUTTON_0;
+    break;
+  default:
+    num = num * 4 / 3;
+    break;
+  }
+  return num;
+}
+
+int_fast8_t buttonNumToMacrosNum(int_fast8_t num)
+{
+  assert(0 <= num and num < 16);
+  switch (num)
+  {
+  case BUTTON_0:
+    num = 9;
+    break;
+  case BUTTON_1:
+  case BUTTON_2:
+  case BUTTON_3:
+  case BUTTON_4:
+  case BUTTON_5:
+  case BUTTON_6:
+  case BUTTON_7:
+  case BUTTON_8:
+  case BUTTON_9:
+    num = (num + 2) * 3 / 4 - 1;
+    break;
+  default:
+    num = -1;
+    break;
+  }
+  return num;
+}
+
+
+//?##################################################################################
+//*         macroses itself
+void lmbSpam()
+{
+  Mouse.click(MOUSE_LEFT);
+}
+
+void rmbSpam()
+{
+  Mouse.click(MOUSE_RIGHT);
+}
+
+void plusW()
+{
+  Keyboard.press('w');
+}
+
+void minusW()
+{
+  Keyboard.release('w');
 }

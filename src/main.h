@@ -1,6 +1,5 @@
 //?##################################################################################
 //*         Config
-// #define DEBUG
 
 //?##################################################################################
 //*         includes
@@ -19,9 +18,6 @@
 
 //?##################################################################################
 //*         preprocessor
-#ifdef DEBUG
-#define DEBUGSERIAL Serial0
-#endif
 
 #ifndef ARDUINO_USB_MODE
 #error This ESP32 SoC has no Native USB interface
@@ -73,31 +69,17 @@ enum MODES
     MODE_SETTINGS,
 };
 
-#ifdef DEBUG
-#define PRINT(x) DEBUGSERIAL.print(x)
-#define PRINTLN(x) DEBUGSERIAL.println(x)
-#define PRINT2(x, y) DEBUGSERIAL.print(x, y)
-#define PRINTLN2(x, y) DEBUGSERIAL.println(x, y)
-
 #define DUMPFS()                             \
     {                                        \
-        PRINTLN("SPIFFS file list: ");       \
+        log_i("[SPIFFS file list:]");        \
         fs::File root = SPIFFS.open("/");    \
         fs::File file = root.openNextFile(); \
         while (file)                         \
         {                                    \
-            PRINT("\tFILE: ");               \
-            PRINTLN(file.name());            \
+            log_i("[FILE: %s]", file.name());  \
             file = root.openNextFile();      \
         }                                    \
     }
-#else
-#define PRINT(x)
-#define PRINTLN(x)
-#define PRINT2(x, y)
-#define PRINTLN2(x, y)
-#define DUMPFS()
-#endif
 
 struct macros_t
 {
@@ -120,8 +102,6 @@ void setBrightness(uint8_t brightness);
 void handleScreen(void *args);
 void handleButtons(void *args);
 void mainSystem(void *args);
-
-void debug(void *args);
 
 void macrosInit();
 

@@ -65,17 +65,11 @@ void loop()
   vTaskDelete(NULL);
 }
 
-void setBrightness(uint8_t brightness)
-{
-  ledcWrite(0, brightness);
-}
-
 void handleScreen(void *args)
 {
   for (;;)
   {
-    setBrightness(
-        currMode == MODE_OFF ? 0 : brightness); // turn on/off the backlight
+    setBrightness(currMode == MODE_OFF ? 0 : brightness); // turn on/off the backlight
 
     switch (currMode)
     {
@@ -88,33 +82,31 @@ void handleScreen(void *args)
       {
         for (size_t buttonColumn = 0; buttonColumn < 4; buttonColumn++)
         {
-
-          bool currMacsosState = false;
-          int_fast8_t buttonID, macrosID;
-          buttonID = buttonRow * 4 + buttonColumn;
-          macrosID = buttonNumToMacrosNum(buttonID);
-
-          if (macrosID != -1)
-          {
-            if (macrosOnTabs[currTab][macrosID] != nullptr)
-            {
-              currMacsosState = macrosOnTabs[currTab][macrosID]->getStatus();
-            }
-          }
-
-          tft.drawCircle(
-              22 + 28 * buttonColumn, 50 + 28 * buttonRow, 11,
-              currMacsosState ? TFT_GREEN
-                              : TFT_RED); // display macroses state
-          tft.drawCircle(22 + 28 * buttonColumn, 50 + 28 * buttonRow,
-                         10, currMacsosState ? TFT_GREEN : TFT_RED);
-
-          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2,
-                        buttonState & 1 << (buttonColumn + buttonRow * 4)
-                            ? TFT_GREEN
-                            : TFT_RED); // display buttons state
+          // button state grid topright corner
+          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED); // display buttons state
         }
       }
+
+      for (size_t macroRow = 0; macroRow < 3; macroRow++)
+      {
+        for (size_t macroColumn = 0; macroColumn < 3; macroColumn++)
+        {
+
+          bool currMacsosState = false;
+          int_fast8_t macrosID;
+          macrosID = macroRow * 4 + macroColumn;
+
+          if (macrosOnTabs[currTab][macrosID] != nullptr)
+          {
+            currMacsosState = macrosOnTabs[currTab][macrosID]->getStatus();
+          }
+
+          // draw itself
+          tft.drawCircle(34 + 28 * macroColumn, 50 + 28 * macroRow, 11, currMacsosState ? TFT_GREEN : TFT_RED); // display macroses state
+          tft.drawCircle(34 + 28 * macroColumn, 50 + 28 * macroRow, 10, currMacsosState ? TFT_GREEN : TFT_RED);
+        }
+      }
+      tft.drawCircle(34 + 28 * 2, 50 + 28 * 4, 10, ((macrosOnTabs[currTab][9] != nullptr) ? macrosOnTabs[currTab][9]->getStatus() : false) ? TFT_GREEN : TFT_RED);
 
       //* tab slider
       if (currTab != 0)
@@ -267,6 +259,11 @@ void macrosInit()
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_5)] = macros_toggle_autoClickerRMB;
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_3)] = macros_powershell_call;
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_6)] = macros_toggle_plusW;
+}
+
+void setBrightness(uint8_t brightness)
+{
+  ledcWrite(0, brightness);
 }
 
 //?##################################################################################

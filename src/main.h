@@ -115,6 +115,7 @@ void rmbSpam(); // just click RMB
 
 void plusW();  // press w
 void minusW(); // unpress w
+void powershell(); // open powershell
 
 //?##################################################################################
 //*         macroses variants
@@ -122,7 +123,8 @@ Macros *macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 *
 Macros *macros_toggle_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
 Macros *macros_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
 Macros *macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
-Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
+// Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
 Macros *macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
+Macros *macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
 
 #pragma once

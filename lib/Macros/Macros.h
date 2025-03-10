@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <esp_timer.h>
+#include <esp32-hal-log.h>
 
 enum MacrosType
 {
@@ -31,7 +32,7 @@ public:
     /// @brief
     /// @param setMacrosItself function to run on tick
     /// @param setMacrosOnStop used in HOLD modes to unpress pressed keys
-    /// @param setMacrosType   does "poke" toggle macros
+    /// @param setMacrosType   select behavior of a macros (CYCLIC, CYCLIC_TOGGLE, ONCE, HOLD, HOLD_TOGGLE)
     /// @param setPeriod      uS period
     Macros(void (*setMacrosItself)(), void (*setMacrosOnStop)(), MacrosType setMacrosType, int64_t setPeriod);
     ~Macros();

@@ -30,14 +30,24 @@ uint_fast8_t Macros::runMacro()
         {
             if (status)
             {
+                log_i("macros  called, type: %i", macrosType);
                 macrosItself();
             }
             else
             {
+                log_i("macros stopped, type: %i", macrosType);
                 macrosOnStop();
             }
         }
         previousStatus = status; // used as prevuousState
+        break;
+    case MACROS_ONCE:
+        if (status)
+        {
+            log_i("macros  called, type: %i", macrosType);
+            macrosItself();
+            status = false;
+        }
         break;
     default:
         return 1;
@@ -56,6 +66,7 @@ uint_fast8_t Macros::pokeMacro(const bool active)
         break;
     case MACROS_HOLD_TOGGLE:
     case MACROS_CYCLIC_TOGGLE:
+    case MACROS_ONCE:
         status ^= active and !previousPoke;
         previousPoke = active;
         break;

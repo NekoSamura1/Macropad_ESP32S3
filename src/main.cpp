@@ -265,7 +265,7 @@ void macrosInit()
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_4)] = macros_toggle_autoClickerLMB;
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_2)] = macros_autoClickerRMB;
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_5)] = macros_toggle_autoClickerRMB;
-  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_3)] = macros_plusW;
+  macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_3)] = macros_powershell_call;
   macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_6)] = macros_toggle_plusW;
 }
 
@@ -334,4 +334,16 @@ void plusW()
 void minusW()
 {
   Keyboard.release('w');
+}
+
+void powershell()
+{
+  Keyboard.press(KEY_LEFT_GUI);
+  Keyboard.press('r');
+  Keyboard.release(KEY_LEFT_GUI);
+  Keyboard.release('r');
+  delay(100);
+  Keyboard.print("powershell");
+  Keyboard.press(KEY_RETURN);
+  Keyboard.release(KEY_RETURN);
 }

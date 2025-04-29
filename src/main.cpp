@@ -83,7 +83,7 @@ void handleScreen(void *args)
         for (size_t buttonColumn = 0; buttonColumn < 4; buttonColumn++)
         {
           // button state grid topright corner
-          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, buttonState & 1 << (buttonColumn + buttonRow * 4) ? TFT_GREEN : TFT_RED); // display buttons state
+          tft.drawPixel(121 + buttonColumn * 2, 0 + buttonRow * 2, (buttonState & (1 << (buttonColumn + buttonRow * 4))) ? TFT_GREEN : TFT_RED); // display buttons state
         }
       }
 

@@ -4,17 +4,18 @@
 //?##################################################################################
 //*         includes
 
-#include <stdint.h>
-#include <Arduino.h>
-#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
-#include <SPI.h>
-#include <SPIFFS.h>
 #include "ButtonPad.h"
 #include "Macros.h"
+#include "config.h"
 
-#include "USB.h"
-#include "USBHIDMouse.h"
-#include "USBHIDKeyboard.h"
+#include <Arduino.h>
+#include <SPI.h>
+#include <SPIFFS.h>
+#include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
+#include <USB.h>
+#include <USBHIDKeyboard.h>
+#include <USBHIDMouse.h>
+#include <stdint.h>
 
 //?##################################################################################
 //*         preprocessor
@@ -32,8 +33,7 @@
 #define PIN_BACKLIGHT 9
 #define MACROS_COUNT_ON_TAB 10
 
-enum BUTTONS
-{
+enum BUTTONS {
     BUTTON_1,
     BUTTON_2,
     BUTTON_3,
@@ -53,8 +53,7 @@ enum BUTTONS
     BUTTON_COUNT,
 };
 
-enum TABS
-{
+enum TABS {
     TAB_A,
     TAB_B,
     TAB_C,
@@ -62,34 +61,31 @@ enum TABS
     TAB_COUNT,
 };
 
-enum MODES
-{
+enum MODES {
     MODE_OFF,
     MODE_ON,
     MODE_SETTINGS,
 };
 
-#define DUMPFS()                             \
-    {                                        \
-        log_i("[SPIFFS file list:]");        \
-        fs::File root = SPIFFS.open("/");    \
-        fs::File file = root.openNextFile(); \
-        while (file)                         \
-        {                                    \
-            log_i("[FILE: %s]", file.name());  \
-            file = root.openNextFile();      \
-        }                                    \
+#define DUMPFS()                              \
+    {                                         \
+        log_i("[SPIFFS file list:]");         \
+        fs::File root = SPIFFS.open("/");     \
+        fs::File file = root.openNextFile();  \
+        while (file) {                        \
+            log_i("[FILE: %s]", file.name()); \
+            file = root.openNextFile();       \
+        }                                     \
     }
 
-struct macros_t
-{
+struct macros_t {
     std::string imageName = "";
 };
 
 //?##################################################################################
 //*         Globals
 
-Macros *macrosOnTabs[TAB_COUNT][MACROS_COUNT_ON_TAB]{};
+Macros* macrosOnTabs[TAB_COUNT][MACROS_COUNT_ON_TAB] {};
 TABS currTab = TAB_A;
 MODES currMode = MODE_ON;
 
@@ -99,10 +95,9 @@ USBHIDKeyboard Keyboard;
 //?##################################################################################
 //*         prototypes
 void setBrightness(uint8_t brightness);
-void handleScreen(void *args);
-void handleButtons(void *args);
-void mainSystem(void *args);
-
+void handleScreen(void* args);
+void handleButtons(void* args);
+void mainSystem(void* args);
 void macrosInit();
 
 int_fast8_t macrosNumToButtonNum(int_fast8_t num);
@@ -113,18 +108,18 @@ int_fast8_t buttonNumToMacrosNum(int_fast8_t num);
 void lmbSpam(); // just click LMB
 void rmbSpam(); // just click RMB
 
-void plusW();  // press w
+void plusW(); // press w
 void minusW(); // unpress w
 void powershell(); // open powershell
 
 //?##################################################################################
 //*         macroses variants
-Macros *macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
-Macros *macros_toggle_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
-Macros *macros_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
-Macros *macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros* macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros* macros_toggle_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
+Macros* macros_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
+Macros* macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLIC_TOGGLE, 20 * MS_TO_US);
 // Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
-Macros *macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
-Macros *macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
+Macros* macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
+Macros* macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
 
 #pragma once

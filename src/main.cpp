@@ -106,7 +106,8 @@ void handleScreen(void *args)
           tft.drawCircle(34 + 28 * macroColumn, 50 + 28 * macroRow, 10, currMacsosState ? TFT_GREEN : TFT_RED);
         }
       }
-      tft.drawCircle(34 + 28 * 2, 50 + 28 * 4, 10, ((macrosOnTabs[currTab][9] != nullptr) ? macrosOnTabs[currTab][9]->getStatus() : false) ? TFT_GREEN : TFT_RED);
+      tft.drawCircle(34 + 28 , 50 + 28 * 3, 11, ((macrosOnTabs[currTab][9] != nullptr) ? macrosOnTabs[currTab][9]->getStatus() : false) ? TFT_GREEN : TFT_RED);
+      tft.drawCircle(34 + 28 , 50 + 28 * 3, 10, ((macrosOnTabs[currTab][9] != nullptr) ? macrosOnTabs[currTab][9]->getStatus() : false) ? TFT_GREEN : TFT_RED);
 
       //* tab slider
       if (currTab != 0)
@@ -116,8 +117,7 @@ void handleScreen(void *args)
       tft.fillRect((currTab) << 5, 154, 32, 5, TFT_RED);
       if (currTab != 3)
       {
-        tft.fillRect((currTab + 1) << 5, 154, (3 - currTab) << 5, 5,
-                     TFT_DARKGREY);
+        tft.fillRect((currTab + 1) << 5, 154, (3 - currTab) << 5, 5, TFT_DARKGREY);
       }
 
       break;

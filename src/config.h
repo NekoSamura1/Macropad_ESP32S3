@@ -1,5 +1,6 @@
+#include <stdint.h>
 
-#define KEY_SIZE (256 / 8)
+#define KEY_SIZE 32
 
 static const uint8_t aes_key[KEY_SIZE] = {
     0xC3, 0x20, 0x2D, 0xC8, 0x48, 0x4E, 0x04, 0x2B,

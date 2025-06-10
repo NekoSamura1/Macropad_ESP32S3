@@ -121,5 +121,3 @@ Macros* macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLI
 // Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
 Macros* macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
 Macros* macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
-
-#pragma once

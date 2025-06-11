@@ -5,9 +5,9 @@ uint16_t buttonState = 0;
 
 uint8_t brightness = 100;
 
-void setup(void)
-{
+void setup(void) {
     log_i("Start");
+    Serial.begin(115200);
 
     //* start SPIFFS
     while (!SPIFFS.begin()) {
@@ -57,14 +57,12 @@ void setup(void)
     xTaskCreate(mainSystem, "mainSystem", 32768, NULL, 1, NULL);
 }
 
-void loop()
-{
+void loop() {
     log_i("loop deleted");
     vTaskDelete(NULL);
 }
 
-void handleScreen(void* args)
-{
+void handleScreen(void* args) {
     for (;;) {
         setBrightness(currMode == MODE_OFF ? 0 : brightness); // turn on/off the backlight
 
@@ -83,7 +81,6 @@ void handleScreen(void* args)
 
             for (size_t macroRow = 0; macroRow < 3; macroRow++) {
                 for (size_t macroColumn = 0; macroColumn < 3; macroColumn++) {
-
                     bool currMacsosState = false;
                     int_fast8_t macrosID;
                     macrosID = macroRow * 4 + macroColumn;
@@ -122,18 +119,15 @@ void handleScreen(void* args)
     }
 }
 
-void handleButtons(void* args)
-{
+void handleButtons(void* args) {
     for (;;) {
         buttonStateUpdate(&buttonState);
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
-void mainSystem(void* args)
-{
+void mainSystem(void* args) {
     for (;;) {
-
         switch (currMode) {
         case MODE_ON:
             if (buttonState == 1 << BUTTON_A) {
@@ -158,8 +152,7 @@ void mainSystem(void* args)
             case TAB_A:
                 for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
                     if (macrosOnTabs[TAB_A][i] != nullptr) {
-                        macrosOnTabs[TAB_A][i]->pokeMacro(
-                            buttonState & 1 << macrosNumToButtonNum(i));
+                        macrosOnTabs[TAB_A][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
                         macrosOnTabs[TAB_A][i]->runMacro();
                     }
                 }
@@ -168,8 +161,7 @@ void mainSystem(void* args)
             case TAB_B:
                 for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
                     if (macrosOnTabs[TAB_B][i] != nullptr) {
-                        macrosOnTabs[TAB_B][i]->pokeMacro(
-                            buttonState & 1 << macrosNumToButtonNum(i));
+                        macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
                         macrosOnTabs[TAB_B][i]->runMacro();
                     }
                 }
@@ -178,8 +170,7 @@ void mainSystem(void* args)
             case TAB_C:
                 for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
                     if (macrosOnTabs[TAB_C][i] != nullptr) {
-                        macrosOnTabs[TAB_C][i]->pokeMacro(
-                            buttonState & 1 << macrosNumToButtonNum(i));
+                        macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
                         macrosOnTabs[TAB_C][i]->runMacro();
                     }
                 }
@@ -188,8 +179,7 @@ void mainSystem(void* args)
             case TAB_D:
                 for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
                     if (macrosOnTabs[TAB_D][i] != nullptr) {
-                        macrosOnTabs[TAB_D][i]->pokeMacro(
-                            buttonState & 1 << macrosNumToButtonNum(i));
+                        macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
                         macrosOnTabs[TAB_D][i]->runMacro();
                     }
                 }
@@ -202,6 +192,11 @@ void mainSystem(void* args)
             /* code */
             break;
         case MODE_OFF:
+
+            if (receiveDataCommand()) {
+                parseUartCommand(rxBuffer);
+            }
+
         default:
             if ((buttonState & 1 << BUTTON_STAR)) {
                 log_i("MODE_ON");
@@ -217,8 +212,7 @@ void mainSystem(void* args)
     }
 }
 
-void macrosInit()
-{
+void macrosInit() {
     macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_1)] = macros_autoClickerLMB;
     macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_4)] = macros_toggle_autoClickerLMB;
     macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_2)] = macros_autoClickerRMB;
@@ -227,16 +221,12 @@ void macrosInit()
     macrosOnTabs[TAB_A][buttonNumToMacrosNum(BUTTON_6)] = macros_toggle_plusW;
 }
 
-void setBrightness(uint8_t brightness)
-{
-    ledcWrite(0, brightness);
-}
+void setBrightness(uint8_t brightness) { ledcWrite(0, brightness); }
 
 //?##################################################################################
-//*         convert functions
+//*         helper functions
 
-int_fast8_t macrosNumToButtonNum(int_fast8_t num)
-{
+int_fast8_t macrosNumToButtonNum(int_fast8_t num) {
     assert(0 <= num and num < MACROS_COUNT_ON_TAB);
     switch (num) {
     case 9:
@@ -249,8 +239,7 @@ int_fast8_t macrosNumToButtonNum(int_fast8_t num)
     return num;
 }
 
-int_fast8_t buttonNumToMacrosNum(int_fast8_t num)
-{
+int_fast8_t buttonNumToMacrosNum(int_fast8_t num) {
     assert(0 <= num and num < 16);
     switch (num) {
     case BUTTON_0:
@@ -274,30 +263,65 @@ int_fast8_t buttonNumToMacrosNum(int_fast8_t num)
     return num;
 }
 
+// void executeCommand(COMMANDS currCommand, uint32_t arg) {
+//     if (!currCommand) {
+//         return;
+//     }
+// }
+
+bool receiveDataCommand() {
+    while (Serial1.available() ) {
+        char c = Serial1.read();
+
+        if (c == '\n' or c == '\r' or bufferIndex >= MAX_COMMAND_LENGTH - 1) {
+            rxBuffer[bufferIndex] = '\0';
+            return true;
+        } else if (c >= 32 && c <= 126) { // Only printable ASCII
+            rxBuffer[bufferIndex++] = c;
+        }
+    }
+    return false;
+}
+
+int parseUartCommand(char* command) {
+    char* token;
+
+    // Получаем команду от пользователя
+    log_i("Введите команду: ");
+    fgets(command, MAX_COMMAND_LENGTH, stdin);
+
+    // Разбиваем строку на токены по пробелам
+    token = strtok(command, " ");
+
+    // Обрабатываем токены
+    if (token != NULL) {
+        if (strcmp(token, "echo") == 0) {
+            token = strtok(NULL, " "); // Получаем следующий токен (аргумент)
+            if (token != NULL) {
+                log_i("Вывод: %s\n", token);
+            } else {
+                log_i("Ошибка: аргумент отсутствует\n");
+            }
+        } else if (strcmp(token, "exit") == 0) {
+            log_i("Выход из программы.\n");
+            return 0;
+        } else {
+            log_i("Ошибка: неизвестная команда\n");
+        }
+    }
+}
+
 //?##################################################################################
 //*         macroses itself
-void lmbSpam()
-{
-    Mouse.click(MOUSE_LEFT);
-}
+void lmbSpam() { Mouse.click(MOUSE_LEFT); }
 
-void rmbSpam()
-{
-    Mouse.click(MOUSE_RIGHT);
-}
+void rmbSpam() { Mouse.click(MOUSE_RIGHT); }
 
-void plusW()
-{
-    Keyboard.press('w');
-}
+void plusW() { Keyboard.press('w'); }
 
-void minusW()
-{
-    Keyboard.release('w');
-}
+void minusW() { Keyboard.release('w'); }
 
-void powershell()
-{
+void powershell() {
     Keyboard.press(KEY_LEFT_GUI);
     Keyboard.press('r');
     Keyboard.release(KEY_LEFT_GUI);

@@ -84,9 +84,9 @@ enum COMMANDS {
         }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
     }
 
-struct macros_t {
-    std::string imageName = "";
-};
+// struct macros_t {
+//     std::string imageName = "";
+// };
 
 //?##################################################################################
 //*         Globals
@@ -112,6 +112,8 @@ void macrosInit();
 int_fast8_t macrosNumToButtonNum(int_fast8_t num);
 int_fast8_t buttonNumToMacrosNum(int_fast8_t num);
 bool receiveDataCommand();
+
+int parseUartCommand(char* command);
 
 //?##################################################################################
 //*         macroses itself

@@ -7,7 +7,7 @@ uint8_t brightness = 100;
 
 void setup(void) {
     log_i("Start");
-    Serial.begin(115200);
+    Serial0.begin(115200);
 
     //* start SPIFFS
     while (!SPIFFS.begin()) {
@@ -192,11 +192,6 @@ void mainSystem(void* args) {
             /* code */
             break;
         case MODE_OFF:
-
-            if (receiveDataCommand()) {
-                parseUartCommand(rxBuffer);
-            }
-
         default:
             if ((buttonState & 1 << BUTTON_STAR)) {
                 log_i("MODE_ON");
@@ -208,6 +203,12 @@ void mainSystem(void* args) {
             }
             break;
         }
+
+        if (receiveDataCommand()) {
+            parseUartCommand(rxBuffer);
+            bufferIndex = 0;
+        }
+
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
@@ -270,13 +271,15 @@ int_fast8_t buttonNumToMacrosNum(int_fast8_t num) {
 // }
 
 bool receiveDataCommand() {
-    while (Serial1.available() ) {
-        char c = Serial1.read();
-
+    while (Serial0.available()) {
+        char c = Serial0.read();
+        log_i("%x", c);
         if (c == '\n' or c == '\r' or bufferIndex >= MAX_COMMAND_LENGTH - 1) {
             rxBuffer[bufferIndex] = '\0';
             return true;
-        } else if (c >= 32 && c <= 126) { // Only printable ASCII
+        } else if (c == 8) { // стирание
+            bufferIndex--;
+        } else /*if (c >= 32 && c <= 126)*/ { // Only printable ASCII
             rxBuffer[bufferIndex++] = c;
         }
     }
@@ -287,9 +290,9 @@ int parseUartCommand(char* command) {
     char* token;
 
     // Получаем команду от пользователя
-    log_i("Введите команду: ");
+    // log_i("Введите команду: ");
     fgets(command, MAX_COMMAND_LENGTH, stdin);
-
+    log_i("%s", command);
     // Разбиваем строку на токены по пробелам
     token = strtok(command, " ");
 
@@ -299,16 +302,22 @@ int parseUartCommand(char* command) {
             token = strtok(NULL, " "); // Получаем следующий токен (аргумент)
             if (token != NULL) {
                 log_i("Вывод: %s\n", token);
+                return 3;
             } else {
+
                 log_i("Ошибка: аргумент отсутствует\n");
+
+                return 2;
             }
         } else if (strcmp(token, "exit") == 0) {
             log_i("Выход из программы.\n");
             return 0;
         } else {
             log_i("Ошибка: неизвестная команда\n");
+            return 1;
         }
     }
+    return 4;
 }
 
 //?##################################################################################

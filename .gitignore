@@ -28,5 +28,6 @@ lib/TFT_eSPI-2.5.43/README*
 
 !lib/ButtonPad/
 !lib/Macros/
+!lib/CryptoText/
 
 include/simple-bench.h

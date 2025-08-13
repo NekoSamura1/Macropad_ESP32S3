@@ -7,7 +7,6 @@ uint8_t brightness = 100;
 
 void setup(void) {
     log_i("Start");
-    Serial0.begin(115200);
 
     //* start SPIFFS
     while (!SPIFFS.begin()) {
@@ -15,6 +14,10 @@ void setup(void) {
         vTaskDelay(100);
     }
     DUMPFS();
+
+    //*init CLI
+    log_d("CLI setup");
+    initCLI(&SERIAL_CLI, commands, sizeof(commands));
 
     //* setup button pad
     log_d("Button pad setup");
@@ -204,10 +207,7 @@ void mainSystem(void* args) {
             break;
         }
 
-        if (receiveDataCommand()) {
-            parseUartCommand(rxBuffer);
-            bufferIndex = 0;
-        }
+        processCLI(inputBuffer, sizeof(inputBuffer), deviceName); //! fixme should be in "mode off"
 
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
@@ -264,62 +264,6 @@ int_fast8_t buttonNumToMacrosNum(int_fast8_t num) {
     return num;
 }
 
-// void executeCommand(COMMANDS currCommand, uint32_t arg) {
-//     if (!currCommand) {
-//         return;
-//     }
-// }
-
-bool receiveDataCommand() {
-    while (Serial0.available()) {
-        char c = Serial0.read();
-        log_i("%x", c);
-        if (c == '\n' or c == '\r' or bufferIndex >= MAX_COMMAND_LENGTH - 1) {
-            rxBuffer[bufferIndex] = '\0';
-            return true;
-        } else if (c == 8) { // стирание
-            bufferIndex--;
-        } else /*if (c >= 32 && c <= 126)*/ { // Only printable ASCII
-            rxBuffer[bufferIndex++] = c;
-        }
-    }
-    return false;
-}
-
-int parseUartCommand(char* command) {
-    char* token;
-
-    // Получаем команду от пользователя
-    // log_i("Введите команду: ");
-    fgets(command, MAX_COMMAND_LENGTH, stdin);
-    log_i("%s", command);
-    // Разбиваем строку на токены по пробелам
-    token = strtok(command, " ");
-
-    // Обрабатываем токены
-    if (token != NULL) {
-        if (strcmp(token, "echo") == 0) {
-            token = strtok(NULL, " "); // Получаем следующий токен (аргумент)
-            if (token != NULL) {
-                log_i("Вывод: %s\n", token);
-                return 3;
-            } else {
-
-                log_i("Ошибка: аргумент отсутствует\n");
-
-                return 2;
-            }
-        } else if (strcmp(token, "exit") == 0) {
-            log_i("Выход из программы.\n");
-            return 0;
-        } else {
-            log_i("Ошибка: неизвестная команда\n");
-            return 1;
-        }
-    }
-    return 4;
-}
-
 //?##################################################################################
 //*         macroses itself
 void lmbSpam() { Mouse.click(MOUSE_LEFT); }
@@ -340,3 +284,20 @@ void powershell() {
     Keyboard.press(KEY_RETURN);
     Keyboard.release(KEY_RETURN);
 }
+
+//?##################################################################################
+//*         cli commands
+
+void cmdLed(const char* arg) {
+    if (strcasecmp(arg, "on") == 0) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        SERIAL_CLI.println("LED ON");
+    } else if (strcasecmp(arg, "off") == 0) {
+        digitalWrite(LED_BUILTIN, LOW);
+        SERIAL_CLI.println("LED OFF");
+    } else {
+        SERIAL_CLI.println("Invalid LED argument");
+    }
+}
+
+void cmdEcho(const char* arg) { SERIAL_CLI.println("arg"); }

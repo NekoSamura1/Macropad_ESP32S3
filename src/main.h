@@ -6,6 +6,7 @@
 
 #include "ButtonPad.h"
 #include "Macros.h"
+#include "cli.h"
 #include "config.h"
 
 #include <Arduino.h>
@@ -98,8 +99,6 @@ MODES currMode = MODE_ON;
 USBHIDMouse Mouse;
 USBHIDKeyboard Keyboard;
 
-char rxBuffer[MAX_COMMAND_LENGTH]{};
-size_t bufferIndex{};
 
 //?##################################################################################
 //*         prototypes
@@ -111,9 +110,6 @@ void macrosInit();
 
 int_fast8_t macrosNumToButtonNum(int_fast8_t num);
 int_fast8_t buttonNumToMacrosNum(int_fast8_t num);
-bool receiveDataCommand();
-
-int parseUartCommand(char* command);
 
 //?##################################################################################
 //*         macroses itself
@@ -124,6 +120,7 @@ void plusW();      // press w
 void minusW();     // unpress w
 void powershell(); // open powershell
 
+
 //?##################################################################################
 //*         macroses variants
 Macros* macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
@@ -133,3 +130,21 @@ Macros* macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLI
 // Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
 Macros* macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
 Macros* macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
+
+
+//?##################################################################################
+//*         cli commands
+
+#define SERIAL_CLI Serial0
+#define MAX_INPUT_BUFFER 64
+
+const char deviceName[] = "esp32";
+char inputBuffer[MAX_INPUT_BUFFER];
+
+void cmdLed(const char* arg);
+void cmdEcho(const char* arg);
+
+Command commands[] ={
+    {"echo", cmdEcho},
+    {"led", cmdLed},
+};

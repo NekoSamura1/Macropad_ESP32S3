@@ -300,4 +300,32 @@ void cmdLed(const char* arg) {
     }
 }
 
-void cmdEcho(const char* arg) { SERIAL_CLI.println("arg"); }
+void cmdEcho(const char* arg) { SERIAL_CLI.println(arg); }
+void cmdLS(const char* arg) {DUMPFS();}
+
+
+void cmdReadRecord(const char* arg) {
+    size_t recordNumber;
+    recordNumber = atoi(arg);
+    readRecord(recordNumber);
+}
+void cmdAddRecord(const char* arg) {
+    uint8_t tempIV[IV_SIZE]{};
+    appendRecord(tempIV, arg, strlen(arg));
+}
+
+void cmdDeleteRecord(const char* arg) {
+    size_t recordNumber;
+    recordNumber = atoi(arg);
+    deleteRecord(recordNumber);
+}
+
+void cmdDeleteALL(const char* arg) {
+    deleteFile(arg);
+}
+
+// void addRecord(const char* arg){
+
+// }
+// void delRecord(const char* arg){}
+// void dumpRecordsSerial(const char* arg){}

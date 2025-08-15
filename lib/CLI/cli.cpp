@@ -7,7 +7,7 @@ HardwareSerial* Serial_Cli;
 
 void initCLI(HardwareSerial* _Serial_Cli, const Command* const command, const size_t size) {
     commandList = command;
-    commandCount = size/sizeof(Command);
+    commandCount = size / sizeof(Command);
     Serial_Cli = _Serial_Cli;
     Serial_Cli->begin(115200);
 }
@@ -49,6 +49,8 @@ void processCommand(char* const inputBuffer, const char* const prefix) {
         if (strcasecmp(cmdBuffer, commandList[i].name) == 0) {
             commandList[i].function(argBuffer);
             break;
+        } else if (i == commandCount - 1) {
+            log_i("No such command available");
         }
     }
 }

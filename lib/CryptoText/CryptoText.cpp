@@ -2,9 +2,7 @@
 //?##################################################################################
 //*         TEXT functions
 
-// Append a new record to the file
-
-void appendRecord(const uint8_t* iv, const char* data, uint16_t data_len) {
+void appendRecord(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
     File file = SPIFFS.open(FILE_PATH, FILE_APPEND);
     if (!file) {
         log_e("Failed to open file for appending");
@@ -31,7 +29,7 @@ void appendRecord(const uint8_t* iv, const char* data, uint16_t data_len) {
     file.close();
 }
 
-void readRecord(uint32_t n) {
+void readRecord(uint32_t n, uint8_t* data, const RecordHeader* header) {
     File file = SPIFFS.open(FILE_PATH, FILE_READ);
     if (!file) {
         log_e("Failed to open file for reading");
@@ -40,7 +38,6 @@ void readRecord(uint32_t n) {
 
     uint32_t pos = 0;
     uint32_t recordIndex = 0;
-    RecordHeader header;
 
     while (file.available() && recordIndex < n) {
         if (file.read((uint8_t*)&header, sizeof(RecordHeader)) != sizeof(RecordHeader)) {
@@ -48,8 +45,8 @@ void readRecord(uint32_t n) {
             file.close();
             return;
         }
-        file.seek(pos + sizeof(RecordHeader) + header.data_len);
-        pos += sizeof(RecordHeader) + header.data_len;
+        file.seek(pos + sizeof(RecordHeader) + header->data_len);
+        pos += sizeof(RecordHeader) + header->data_len;
         recordIndex++;
     }
 
@@ -65,31 +62,29 @@ void readRecord(uint32_t n) {
         return;
     }
 
-    char* data = (char*)malloc(header.data_len + 1);
+    data = (uint8_t*)malloc(header->data_len);
     if (!data) {
         log_e("Memory allocation failed");
         file.close();
         return;
     }
 
-    if (file.read((uint8_t*)data, header.data_len) != header.data_len) {
+    if (file.read((uint8_t*)data, header->data_len) != header->data_len) {
         log_e("Failed to read data");
         free(data);
         file.close();
         return;
     }
-    data[header.data_len] = '\0';
+    data[header->data_len] = '\0';
 
-    char iv_str[97]; // 32 bytes * 3 (2 hex + space) + 1 for null
+    char iv_str[50]; // 32 bytes * 3 (2 hex + space) + 1 for null
     iv_str[0] = '\0';
     for (int i = 0; i < IV_SIZE; i++) {
         char temp[4];
-        snprintf(temp, sizeof(temp), "%02X ", header.iv[i]);
+        snprintf(temp, sizeof(temp), "%02X ", header->iv[i]);
         strlcat(iv_str, temp, sizeof(iv_str));
     }
-    log_i("Record %u: iv=%sdata_len=%u data=%s", n, iv_str, header.data_len, data);
-
-    free(data);
+    log_i("Record %u: iv = %s, data_len = %u data = %s", n, iv_str, header->data_len, data);
     file.close();
 }
 
@@ -225,150 +220,126 @@ void deleteRecord(uint32_t n) {
 
     log_i("Record deleted");
 }
-// void addRecord(const char* text) {
-//     size_t text_len = strlen(text);
-//     uint16_t padded_len = calculate_padded_length(text_len);
 
-//     // Подготовка данных
-//     uint8_t iv[IV_SIZE];
-//     uint8_t iv_copy[IV_SIZE];
-//     uint8_t* padded = (uint8_t*)malloc(padded_len);
-//     uint8_t* encrypted = (uint8_t*)malloc(padded_len);
+int encrypt_data(const uint8_t* input, size_t inputLen, uint8_t* output, uint8_t* iv) {
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
 
-//     memcpy(padded, text, text_len);
-//     add_pkcs7_padding(padded, text_len);
+    esp_fill_random(iv, IV_SIZE);
 
-//     // Шифрование с сохранением оригинального IV
-//     esp_fill_random(iv, IV_SIZE);
-//     memcpy(iv_copy, iv, IV_SIZE);
+    int ret = mbedtls_aes_setkey_enc(&aes, aes_key, KEY_SIZE * 8);
+    if (ret != 0) {
+        log_e("AES key setup error: 0x%X", -ret);
+        mbedtls_aes_free(&aes);
+        return ret;
+    }
 
-//     mbedtls_aes_context aes;
-//     mbedtls_aes_init(&aes);
-//     mbedtls_aes_setkey_enc(&aes, aes_key, KEY_SIZE * 8);
-//     mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, padded_len, iv_copy, padded, encrypted);
+    uint8_t iv_copy[IV_SIZE];
+    memcpy(iv_copy, iv, IV_SIZE);
+    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, inputLen, iv_copy, input, output);
 
-//     // Запись в файл
-//     FILE* f = fopen("/spiffs/data.bin", "ab");
-//     if (f) {
-//         RecordHeader header = {.data_len = padded_len};
-//         memcpy(header.iv, iv, IV_SIZE);
+    mbedtls_aes_free(&aes);
+    return ret;
+}
 
-//         fwrite(&header, 1, sizeof(RecordHeader), f);
-//         fwrite(encrypted, 1, padded_len, f);
-//         fclose(f);
-//     }
-//     log_i("added record: %s", text);
-//     free(padded);
-//     free(encrypted);
-//     mbedtls_aes_free(&aes);
-// }
+int decrypt_data(const uint8_t* input, size_t ilen, uint8_t* output, const uint8_t* iv) {
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    int ret = mbedtls_aes_setkey_dec(&aes, aes_key, KEY_SIZE * 8);
+    if (ret != 0) {
+        log_e("AES key setup failed: %d", ret);
+        return ret;
+    }
+    uint8_t iv_copy[IV_SIZE];
+    memcpy(iv_copy, iv, IV_SIZE);
+    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, ilen, iv_copy, input, output);
+    mbedtls_aes_free(&aes);
+    return ret;
+}
 
-// void getRecord(size_t record_num) {
-//     log_i("Reading record :%lu", record_num);
+size_t remove_pkcs7_padding(uint8_t* data, size_t len) {
+    if (len == 0 || len % 16 != 0) {
+        return 0;
+    }
+    uint8_t pad = data[len - 1];
+    if (pad == 0 || pad > 16) {
+        return len;
+    }
+    for (int i = len - pad; i < len; i++) {
+        if (data[i] != pad) {
+            log_w("Invalid padding byte at %d: 0x%02X", i, data[i]);
+            return len;
+        }
+    }
+    return len - pad;
+}
 
-//     FILE* f = fopen("/spiffs/data.bin", "rb");
-//     if (!f) return;
+void add_pkcs7_padding(uint8_t* data, size_t len) {
+    uint8_t pad = 16 - (len % 16);
+    memset(data + len, pad, pad);
+}
 
-//     uint32_t current = 0;
-//     while (1) {
-//         RecordHeader header;
-//         // Чтение заголовка
-//         if (fread(&header, 1, sizeof(RecordHeader), f) != sizeof(RecordHeader))
-//             break;
+inline size_t calculate_padded_length(size_t len) { return ((len + 15) / 16) * 16; }
 
-//         // Пропуск данных если не нужная запись
-//         if (current++ != record_num) {
-//             fseek(f, header.data_len, SEEK_CUR);
-//             continue;
-//         }
+void testEncryptDecrypt(const char* text) {
 
-//         // Чтение данных
-//         uint8_t* encrypted = static_cast<uint8_t*>(malloc(header.data_len));
-//         fread(encrypted, 1, header.data_len, f);
+    size_t text_len = strlen(text) + 1;
+    size_t padded_len = calculate_padded_length(text_len);
 
-//         // Дешифровка
-//         uint8_t* decrypted = static_cast<uint8_t*>(malloc(header.data_len));
-//         uint8_t iv_copy[IV_SIZE];
-//         memcpy(iv_copy, header.iv, IV_SIZE);
+    // Подготовка данных
+    uint8_t iv[IV_SIZE];
 
-//         mbedtls_aes_context aes;
-//         mbedtls_aes_init(&aes);
-//         mbedtls_aes_setkey_dec(&aes, aes_key, KEY_SIZE * 8);
-//         mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, header.data_len, iv_copy,
-//                               encrypted, decrypted);
+    uint8_t* padded = static_cast<uint8_t*>(malloc(padded_len));
+    uint8_t* encrypted = static_cast<uint8_t*>(malloc(padded_len));
 
-//         // Вывод
-//         // size_t plain_len = remove_pkcs7_padding(decrypted, header.data_len);
-//         log_i("%s", decrypted);
+    memcpy(padded, text, text_len);
+    add_pkcs7_padding(padded, text_len);
 
-//         free(decrypted);
-//         free(encrypted);
-//         mbedtls_aes_free(&aes);
-//         break;
-//     }
-//     fclose(f);
-// }
+    encrypt_data(padded, padded_len, encrypted, iv);
 
-// /*
-// int encrypt_data(const uint8_t* input, size_t ilen, uint8_t* output, uint8_t*
-// iv)
-// {
-//     mbedtls_aes_context aes;
-//     mbedtls_aes_init(&aes);
+    char iv_str[50]; // 32 bytes * 3 (2 hex + space) + 1 for null
+    iv_str[0] = '\0';
+    for (int i = 0; i < IV_SIZE; i++) {
+        char temp[4];
+        snprintf(temp, sizeof(temp), "%02X ", iv[i]);
+        strlcat(iv_str, temp, sizeof(iv_str));
+    }
+    log_i("Record: iv = %s, data_len = %u, data = %s", iv_str, padded_len, padded);
+    log_i("Encrypted = %s", encrypted);
+    memset(padded, 0, padded_len);
+    decrypt_data(encrypted, padded_len, padded, iv);
 
-//     esp_fill_random(iv, IV_SIZE);
+    log_i("Record: iv = %s data_len = %u data = %s", iv_str, padded_len, padded);
+    remove_pkcs7_padding(padded, padded_len);
+    log_i("Record: iv = %s data_len = %u data = %s", iv_str, text_len, padded);
 
-//     int ret = mbedtls_aes_setkey_enc(&aes, aes_key, KEY_SIZE * 8);
-//     if (ret != 0) {
-//         ESP_LOGE(TAG, "AES key setup error: 0x%X", -ret);
-//         mbedtls_aes_free(&aes);
-//         return ret;
-//     }
-//     uint8_t iv_copy[IV_SIZE];
-//     memcpy(iv_copy, iv, IV_SIZE); // Копируем IV в выходной буфер
-//     ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, ilen, iv_copy, input,
-// output);
+    free(padded);
+    free(encrypted);
+}
 
-//     mbedtls_aes_free(&aes);
-//     return ret;
-// }
+void appendEnctyptedRecord(const char* text) {
 
-// int decrypt_data(const uint8_t* input, size_t ilen, uint8_t* output, const
-// uint8_t* iv)
-// {
-//     mbedtls_aes_context aes;
-//     mbedtls_aes_init(&aes);
-//     int ret = mbedtls_aes_setkey_dec(&aes, aes_key, KEY_SIZE * 8);
-//     if (ret != 0) {
-//         ESP_LOGE(TAG, "AES key setup failed: %d", ret);
-//         return ret;
-//     }
-//     uint8_t iv_copy[IV_SIZE];
-//     memcpy(iv_copy, iv, IV_SIZE);
-//     ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, ilen, iv_copy, input,
-// output); mbedtls_aes_free(&aes); return ret;
-// }
-// */
+    size_t text_len = strlen(text) + 1;
+    size_t padded_len = calculate_padded_length(text_len);
 
-// size_t remove_pkcs7_padding(uint8_t* data, size_t len) {
-//     if (len == 0 || len % 16 != 0) return 0;
-//     uint8_t pad = data[len - 1];
-//     if (pad == 0 || pad > 16) return len;
+    // Подготовка данных
+    uint8_t iv[IV_SIZE];
 
-//     for (int i = len - pad; i < len; i++) {
-//         if (data[i] != pad) {
-//             // ESP_LOGW(TAG, "Invalid padding byte at %d: 0x%02X", i, data[i]);
-//             return len;
-//         }
-//     }
-//     return len - pad;
-// }
+    uint8_t* padded = static_cast<uint8_t*>(malloc(padded_len));
+    uint8_t* encrypted = static_cast<uint8_t*>(malloc(padded_len));
 
-// void add_pkcs7_padding(uint8_t* data, size_t len) {
-//     uint8_t pad = 16 - (len % 16);
-//     memset(data + len, pad, pad);
-// }
+    memcpy(padded, text, text_len);
+    add_pkcs7_padding(padded, text_len);
 
-// inline uint_fast16_t calculate_padded_length(int_fast16_t len) {
-//     return ((len + 15) / 16) * 16;
-// }
+    encrypt_data(padded, padded_len, encrypted, iv);
+    appendRecord(iv, encrypted, padded_len);
+
+    free(padded);
+    free(encrypted);
+}
+
+void readEncryptedRecord(size_t number, char* text) {
+    uint8_t* encrypted;
+    RecordHeader header{};
+    readRecord(number, encrypted, &header);
+}

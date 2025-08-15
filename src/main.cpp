@@ -301,17 +301,19 @@ void cmdLed(const char* arg) {
 }
 
 void cmdEcho(const char* arg) { SERIAL_CLI.println(arg); }
-void cmdLS(const char* arg) {DUMPFS();}
-
+void cmdLS(const char* arg) { DUMPFS(); }
 
 void cmdReadRecord(const char* arg) {
     size_t recordNumber;
     recordNumber = atoi(arg);
-    readRecord(recordNumber);
+    uint8_t* record;
+    readRecord(recordNumber, record);
+    free(record);
 }
+
 void cmdAddRecord(const char* arg) {
     uint8_t tempIV[IV_SIZE]{};
-    appendRecord(tempIV, arg, strlen(arg));
+    appendRecord(tempIV, reinterpret_cast<const uint8_t*>(arg), strlen(arg) + 1);
 }
 
 void cmdDeleteRecord(const char* arg) {
@@ -320,9 +322,7 @@ void cmdDeleteRecord(const char* arg) {
     deleteRecord(recordNumber);
 }
 
-void cmdDeleteALL(const char* arg) {
-    deleteFile(arg);
-}
+void cmdDeleteALL(const char* arg) { deleteFile(arg); }
 
 // void addRecord(const char* arg){
 

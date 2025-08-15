@@ -158,7 +158,7 @@ Command commands[] ={
     {"addText", cmdAddRecord},
     {"getText", cmdReadRecord},
     {"deleteText", cmdDeleteRecord},
-    {"deleteAll", cmdDeleteALL},
+    {"deleteFile", cmdDeleteALL},
 };
 // esp32 gettext
 // esp32 addtext

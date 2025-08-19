@@ -2,7 +2,7 @@
 //?##################################################################################
 //*         TEXT functions
 
-void appendRecord(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
+void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
     File file = SPIFFS.open(FILE_PATH, FILE_APPEND);
     if (!file) {
         log_e("Failed to open file for appending");
@@ -29,7 +29,7 @@ void appendRecord(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
     file.close();
 }
 
-void readRecord(uint32_t n, uint8_t* data, const RecordHeader* header) {
+void readRecordRaw(uint32_t n, uint8_t** data, RecordHeader* header) {
     File file = SPIFFS.open(FILE_PATH, FILE_READ);
     if (!file) {
         log_e("Failed to open file for reading");
@@ -40,7 +40,7 @@ void readRecord(uint32_t n, uint8_t* data, const RecordHeader* header) {
     uint32_t recordIndex = 0;
 
     while (file.available() && recordIndex < n) {
-        if (file.read((uint8_t*)&header, sizeof(RecordHeader)) != sizeof(RecordHeader)) {
+        if (file.read((uint8_t*)header, sizeof(RecordHeader)) != sizeof(RecordHeader)) {
             log_e("Failed to read header or EOF");
             file.close();
             return;
@@ -56,36 +56,38 @@ void readRecord(uint32_t n, uint8_t* data, const RecordHeader* header) {
         return;
     }
 
-    if (file.read((uint8_t*)&header, sizeof(RecordHeader)) != sizeof(RecordHeader)) {
+    if (file.read((uint8_t*)header, sizeof(RecordHeader)) != sizeof(RecordHeader)) {
         log_e("Failed to read header");
         file.close();
         return;
     }
 
-    data = (uint8_t*)malloc(header->data_len);
-    if (!data) {
+    (*data) = (uint8_t*)malloc(header->data_len + 1);
+    if (!(*data)) {
         log_e("Memory allocation failed");
         file.close();
         return;
     }
 
-    if (file.read((uint8_t*)data, header->data_len) != header->data_len) {
-        log_e("Failed to read data");
-        free(data);
+    if (file.read((uint8_t*)(*data), header->data_len) != header->data_len) {
+        log_e("Failed to read (*data)");
+        free((*data));
         file.close();
         return;
     }
-    data[header->data_len] = '\0';
+    (*data)[header->data_len] = '\0';
 
-    char iv_str[50]; // 32 bytes * 3 (2 hex + space) + 1 for null
+    char iv_str[49]; // 16 bytes * 3 (2 hex + space) + 1 for null
     iv_str[0] = '\0';
     for (int i = 0; i < IV_SIZE; i++) {
         char temp[4];
         snprintf(temp, sizeof(temp), "%02X ", header->iv[i]);
         strlcat(iv_str, temp, sizeof(iv_str));
     }
-    log_i("Record %u: iv = %s, data_len = %u data = %s", n, iv_str, header->data_len, data);
+    log_i("Record %u: iv = %s, data_len = %u, (*data) = %s", n, iv_str, header->data_len, (*data));
     file.close();
+    log_i("readed");
+    delay(100);
 }
 
 void deleteFile(const char* fileName) {
@@ -221,7 +223,7 @@ void deleteRecord(uint32_t n) {
     log_i("Record deleted");
 }
 
-int encrypt_data(const uint8_t* input, size_t inputLen, uint8_t* output, uint8_t* iv) {
+int encrypt_data(size_t inputLen, uint8_t* iv, const uint8_t* input, uint8_t* output) {
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
 
@@ -242,7 +244,7 @@ int encrypt_data(const uint8_t* input, size_t inputLen, uint8_t* output, uint8_t
     return ret;
 }
 
-int decrypt_data(const uint8_t* input, size_t ilen, uint8_t* output, const uint8_t* iv) {
+int decrypt_data(size_t ilen, const uint8_t* iv, const uint8_t* input, uint8_t* output) {
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
     int ret = mbedtls_aes_setkey_dec(&aes, aes_key, KEY_SIZE * 8);
@@ -295,7 +297,7 @@ void testEncryptDecrypt(const char* text) {
     memcpy(padded, text, text_len);
     add_pkcs7_padding(padded, text_len);
 
-    encrypt_data(padded, padded_len, encrypted, iv);
+    encrypt_data(padded_len, iv, padded, encrypted);
 
     char iv_str[50]; // 32 bytes * 3 (2 hex + space) + 1 for null
     iv_str[0] = '\0';
@@ -307,7 +309,7 @@ void testEncryptDecrypt(const char* text) {
     log_i("Record: iv = %s, data_len = %u, data = %s", iv_str, padded_len, padded);
     log_i("Encrypted = %s", encrypted);
     memset(padded, 0, padded_len);
-    decrypt_data(encrypted, padded_len, padded, iv);
+    decrypt_data(padded_len, iv, encrypted, padded);
 
     log_i("Record: iv = %s data_len = %u data = %s", iv_str, padded_len, padded);
     remove_pkcs7_padding(padded, padded_len);
@@ -317,7 +319,7 @@ void testEncryptDecrypt(const char* text) {
     free(encrypted);
 }
 
-void appendEnctyptedRecord(const char* text) {
+void appendEncryptedRecord(const char* text) {
 
     size_t text_len = strlen(text) + 1;
     size_t padded_len = calculate_padded_length(text_len);
@@ -331,15 +333,33 @@ void appendEnctyptedRecord(const char* text) {
     memcpy(padded, text, text_len);
     add_pkcs7_padding(padded, text_len);
 
-    encrypt_data(padded, padded_len, encrypted, iv);
-    appendRecord(iv, encrypted, padded_len);
+    encrypt_data(padded_len, iv, padded, encrypted);
+    appendRecordRaw(iv, encrypted, padded_len);
 
     free(padded);
     free(encrypted);
 }
 
 void readEncryptedRecord(size_t number, char* text) {
-    uint8_t* encrypted;
     RecordHeader header{};
-    readRecord(number, encrypted, &header);
+    uint8_t* encrypted;
+
+    readRecordRaw(number, &encrypted, &header);
+    delay(100);
+    log_i("Record %u: data_len = %u data = %s", number, header.data_len, encrypted);
+    delay(100);
+
+    uint8_t* padded = static_cast<uint8_t*>(malloc(header.data_len));
+    delay(100);
+    decrypt_data(header.data_len, header.iv, encrypted, padded);
+    delay(100);
+    size_t unpadded_len = remove_pkcs7_padding(padded, header.data_len);
+    padded[unpadded_len] = '\0';
+    delay(100);
+    log_i("Record: data_len = %u data = %s", header.data_len, padded);
+    text = static_cast<char*>(malloc(unpadded_len + 1));
+    snprintf(text, unpadded_len + 1, "%s", padded);
+    log_i("Record: str_len = %u, unpadded_len = %u, data = %s", strlen(text), unpadded_len, text);
+    free(encrypted);
+    free(padded);
 }

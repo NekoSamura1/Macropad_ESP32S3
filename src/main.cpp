@@ -306,14 +306,16 @@ void cmdLS(const char* arg) { DUMPFS(); }
 void cmdReadRecord(const char* arg) {
     size_t recordNumber;
     recordNumber = atoi(arg);
+    RecordHeader header;
     uint8_t* record;
-    readRecord(recordNumber, record);
+    readRecordRaw(recordNumber, record, &header);
+    log_i("len = %d, iv = %i, data = %s", header.data_len, header.iv[0], record);
     free(record);
 }
 
 void cmdAddRecord(const char* arg) {
-    uint8_t tempIV[IV_SIZE]{};
-    appendRecord(tempIV, reinterpret_cast<const uint8_t*>(arg), strlen(arg) + 1);
+    const uint8_t tempIV[IV_SIZE]{};
+    appendRecordRaw(tempIV, reinterpret_cast<const uint8_t*>(arg), strlen(arg) + 1);
 }
 
 void cmdDeleteRecord(const char* arg) {
@@ -323,6 +325,14 @@ void cmdDeleteRecord(const char* arg) {
 }
 
 void cmdDeleteALL(const char* arg) { deleteFile(arg); }
+
+void cmdAddEncrypt(const char* arg) { appendEncryptedRecord(arg); }
+
+void cmdGetEncrypt(const char* arg) {
+    char* text;
+    readEncryptedRecord(atoi(arg), text);
+    free(text);
+}
 
 // void addRecord(const char* arg){
 

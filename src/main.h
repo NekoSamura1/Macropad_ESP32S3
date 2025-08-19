@@ -151,7 +151,10 @@ void cmdAddRecord(const char* arg);
 void cmdDeleteRecord(const char* arg);
 void cmdDeleteALL(const char* arg);
 
-Command commands[] ={
+void cmdAddEncrypt(const char* arg);
+void cmdGetEncrypt(const char* arg);
+
+Command commands[] = {
     {"echo", cmdEcho},
     {"led", cmdLed},
     {"ls", cmdLS},
@@ -160,4 +163,6 @@ Command commands[] ={
     {"deleteText", cmdDeleteRecord},
     {"deleteFile", cmdDeleteALL},
     {"test", testEncryptDecrypt},
+    {"addEncrypted", cmdAddEncrypt},
+    {"getEncrypted", cmdGetEncrypt},
 };

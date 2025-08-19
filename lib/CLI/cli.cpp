@@ -6,6 +6,7 @@ size_t commandCount{};
 HardwareSerial* Serial_Cli;
 
 void initCLI(HardwareSerial* _Serial_Cli, const Command* const command, const size_t size) {
+    delay(10);
     commandList = command;
     commandCount = size / sizeof(Command);
     Serial_Cli = _Serial_Cli;

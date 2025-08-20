@@ -308,7 +308,7 @@ void cmdReadRecord(const char* arg) {
     recordNumber = atoi(arg);
     RecordHeader header;
     uint8_t* record;
-    readRecordRaw(recordNumber, record, &header);
+    readRecordRaw(recordNumber, &record, &header);
     log_i("len = %d, iv = %i, data = %s", header.data_len, header.iv[0], record);
     free(record);
 }
@@ -324,7 +324,7 @@ void cmdDeleteRecord(const char* arg) {
     deleteRecord(recordNumber);
 }
 
-void cmdDeleteALL(const char* arg) { deleteFile(arg); }
+void cmdDeleteFile(const char* arg) { deleteFile(arg); }
 
 void cmdAddEncrypt(const char* arg) { appendEncryptedRecord(arg); }
 
@@ -333,9 +333,3 @@ void cmdGetEncrypt(const char* arg) {
     readEncryptedRecord(atoi(arg), text);
     free(text);
 }
-
-// void addRecord(const char* arg){
-
-// }
-// void delRecord(const char* arg){}
-// void dumpRecordsSerial(const char* arg){}

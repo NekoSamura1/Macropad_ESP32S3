@@ -1,6 +1,76 @@
 #include "CryptoText.h"
+#include "config.h"
+//?##################################################################################
+// *         private AES
+
+static const uint8_t aes_key[] = KEY;
+
+//?##################################################################################
+//*         helper functions
+
+int encrypt_data(size_t inputLen, uint8_t* iv, const uint8_t* input, uint8_t* output) {
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+
+    esp_fill_random(iv, IV_SIZE);
+
+    int ret = mbedtls_aes_setkey_enc(&aes, aes_key, KEY_SIZE * 8);
+    if (ret != 0) {
+        log_e("AES key setup error: 0x%X", -ret);
+        mbedtls_aes_free(&aes);
+        return ret;
+    }
+
+    uint8_t iv_copy[IV_SIZE];
+    memcpy(iv_copy, iv, IV_SIZE);
+    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, inputLen, iv_copy, input, output);
+
+    mbedtls_aes_free(&aes);
+    return ret;
+}
+
+int decrypt_data(size_t ilen, const uint8_t* iv, const uint8_t* input, uint8_t* output) {
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    int ret = mbedtls_aes_setkey_dec(&aes, aes_key, KEY_SIZE * 8);
+    if (ret != 0) {
+        log_e("AES key setup failed: %d", ret);
+        return ret;
+    }
+    uint8_t iv_copy[IV_SIZE];
+    memcpy(iv_copy, iv, IV_SIZE);
+    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, ilen, iv_copy, input, output);
+    mbedtls_aes_free(&aes);
+    return ret;
+}
+
+size_t remove_pkcs7_padding(uint8_t* data, size_t len) {
+    if (len == 0 || len % 16 != 0) {
+        return 0;
+    }
+    uint8_t pad = data[len - 1];
+    if (pad == 0 || pad > 16) {
+        return len;
+    }
+    for (int i = len - pad; i < len; i++) {
+        if (data[i] != pad) {
+            log_w("Invalid padding byte at %d: 0x%02X", i, data[i]);
+            return len;
+        }
+    }
+    return len - pad;
+}
+
+void add_pkcs7_padding(uint8_t* data, size_t len) {
+    uint8_t pad = 16 - (len % 16);
+    memset(data + len, pad, pad);
+}
+
+inline size_t calculate_padded_length(size_t len) { return ((len + 15) / 16) * 16; }
+
 //?##################################################################################
 //*         TEXT functions
+
 
 void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
     File file = SPIFFS.open(FILE_PATH, FILE_APPEND);
@@ -222,66 +292,6 @@ void deleteRecord(uint32_t n) {
 
     log_i("Record deleted");
 }
-
-int encrypt_data(size_t inputLen, uint8_t* iv, const uint8_t* input, uint8_t* output) {
-    mbedtls_aes_context aes;
-    mbedtls_aes_init(&aes);
-
-    esp_fill_random(iv, IV_SIZE);
-
-    int ret = mbedtls_aes_setkey_enc(&aes, aes_key, KEY_SIZE * 8);
-    if (ret != 0) {
-        log_e("AES key setup error: 0x%X", -ret);
-        mbedtls_aes_free(&aes);
-        return ret;
-    }
-
-    uint8_t iv_copy[IV_SIZE];
-    memcpy(iv_copy, iv, IV_SIZE);
-    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, inputLen, iv_copy, input, output);
-
-    mbedtls_aes_free(&aes);
-    return ret;
-}
-
-int decrypt_data(size_t ilen, const uint8_t* iv, const uint8_t* input, uint8_t* output) {
-    mbedtls_aes_context aes;
-    mbedtls_aes_init(&aes);
-    int ret = mbedtls_aes_setkey_dec(&aes, aes_key, KEY_SIZE * 8);
-    if (ret != 0) {
-        log_e("AES key setup failed: %d", ret);
-        return ret;
-    }
-    uint8_t iv_copy[IV_SIZE];
-    memcpy(iv_copy, iv, IV_SIZE);
-    ret = mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, ilen, iv_copy, input, output);
-    mbedtls_aes_free(&aes);
-    return ret;
-}
-
-size_t remove_pkcs7_padding(uint8_t* data, size_t len) {
-    if (len == 0 || len % 16 != 0) {
-        return 0;
-    }
-    uint8_t pad = data[len - 1];
-    if (pad == 0 || pad > 16) {
-        return len;
-    }
-    for (int i = len - pad; i < len; i++) {
-        if (data[i] != pad) {
-            log_w("Invalid padding byte at %d: 0x%02X", i, data[i]);
-            return len;
-        }
-    }
-    return len - pad;
-}
-
-void add_pkcs7_padding(uint8_t* data, size_t len) {
-    uint8_t pad = 16 - (len % 16);
-    memset(data + len, pad, pad);
-}
-
-inline size_t calculate_padded_length(size_t len) { return ((len + 15) / 16) * 16; }
 
 void testEncryptDecrypt(const char* text) {
 

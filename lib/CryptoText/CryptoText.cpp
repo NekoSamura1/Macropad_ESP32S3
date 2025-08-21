@@ -71,7 +71,6 @@ inline size_t calculate_padded_length(size_t len) { return ((len + 15) / 16) * 1
 //?##################################################################################
 //*         TEXT functions
 
-
 void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
     File file = SPIFFS.open(FILE_PATH, FILE_APPEND);
     if (!file) {
@@ -159,6 +158,8 @@ void readRecordRaw(uint32_t n, uint8_t** data, RecordHeader* header) {
     log_i("readed");
     delay(100);
 }
+
+void readRecordRaw(uint32_t n, char** data, RecordHeader* const header) { readRecordRaw(n, reinterpret_cast<uint8_t**>(data), header); }
 
 void deleteFile(const char* fileName) {
     if (SPIFFS.remove(fileName)) {
@@ -350,11 +351,16 @@ void appendEncryptedRecord(const char* text) {
     free(encrypted);
 }
 
-void readEncryptedRecord(size_t number, char* text) {
+void readEncryptedRecord(size_t number, char** text) {
     RecordHeader header{};
-    uint8_t* encrypted;
+    uint8_t* encrypted = nullptr;
 
     readRecordRaw(number, &encrypted, &header);
+    if (encrypted == nullptr) {
+        log_e("Failed to read encrypted record");
+        *text = nullptr;
+        return;
+    }
     delay(100);
     log_i("Record %u: data_len = %u data = %s", number, header.data_len, encrypted);
     delay(100);
@@ -367,9 +373,9 @@ void readEncryptedRecord(size_t number, char* text) {
     padded[unpadded_len] = '\0';
     delay(100);
     log_i("Record: data_len = %u data = %s", header.data_len, padded);
-    text = static_cast<char*>(malloc(unpadded_len + 1));
-    snprintf(text, unpadded_len + 1, "%s", padded);
-    log_i("Record: str_len = %u, unpadded_len = %u, data = %s", strlen(text), unpadded_len, text);
+    *text = static_cast<char*>(malloc(unpadded_len + 1));
+    snprintf(*text, unpadded_len + 1, "%s", padded);
+    log_i("Record: str_len = %u, unpadded_len = %u, data = %s", strlen(*text), unpadded_len, *text);
     free(encrypted);
     free(padded);
 }

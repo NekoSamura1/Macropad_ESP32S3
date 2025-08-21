@@ -34,6 +34,8 @@
 #define PIN_BACKLIGHT 9
 #define MACROS_COUNT_ON_TAB 10
 
+#define BUTTON_MASK(num) (1 << (num))
+
 enum BUTTONS {
     BUTTON_1,
     BUTTON_2,
@@ -119,6 +121,9 @@ void plusW();      // press w
 void minusW();     // unpress w
 void powershell(); // open powershell
 
+void printEncrypted(size_t n);
+void printSaved(size_t n);
+
 //?##################################################################################
 //*         macroses variants
 Macros* macros_autoClickerLMB = new Macros(lmbSpam, nullptr, MACROS_CYCLIC, 20 * MS_TO_US);
@@ -128,6 +133,9 @@ Macros* macros_toggle_autoClickerRMB = new Macros(rmbSpam, nullptr, MACROS_CYCLI
 // Macros *macros_plusW = new Macros(plusW, minusW, MACROS_HOLD, 0);
 Macros* macros_toggle_plusW = new Macros(plusW, minusW, MACROS_HOLD_TOGGLE, 0);
 Macros* macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
+
+// Macros* macros_print = new Macros(powershell, nullptr, MACROS_ONCE, 0);
+// Macros* macros_powershell_call = new Macros(powershell, nullptr, MACROS_ONCE, 0);
 
 //?##################################################################################
 //*         cli commands

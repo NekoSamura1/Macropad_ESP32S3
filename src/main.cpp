@@ -204,10 +204,30 @@ void mainSystem(void* args) {
                 vTaskDelay(1 / portTICK_PERIOD_MS);
                 buttonStateUpdate(&buttonState);
             }
+
+            if (buttonState & BUTTON_MASK(BUTTON_BARS)) {
+                uint16_t savedButtonState = buttonState & ~BUTTON_MASK(BUTTON_BARS);
+                size_t n = log2(savedButtonState);
+                if (n < BUTTON_COUNT) {
+                    log_i("printEncrypted(%d)", n);
+                    printEncrypted(n);
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                }
+            }
+
+            if (buttonState & BUTTON_MASK(BUTTON_D)) {
+                uint16_t savedButtonState = buttonState & ~BUTTON_MASK(BUTTON_D);
+                size_t n = log2(savedButtonState);
+                if (n < BUTTON_COUNT) {
+                    log_i("printSaved(%d)", n);
+                    printSaved(n);
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                }
+            }
+            processCLI(inputBuffer, sizeof(inputBuffer), deviceName); //! fixme should be in "mode off"
             break;
         }
 
-        processCLI(inputBuffer, sizeof(inputBuffer), deviceName); //! fixme should be in "mode off"
 
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
@@ -266,6 +286,7 @@ int_fast8_t buttonNumToMacrosNum(int_fast8_t num) {
 
 //?##################################################################################
 //*         macroses itself
+
 void lmbSpam() { Mouse.click(MOUSE_LEFT); }
 
 void rmbSpam() { Mouse.click(MOUSE_RIGHT); }
@@ -283,6 +304,27 @@ void powershell() {
     Keyboard.print("powershell");
     Keyboard.press(KEY_RETURN);
     Keyboard.release(KEY_RETURN);
+}
+
+void printEncrypted(size_t n) {
+    char* record = nullptr;
+    readEncryptedRecord(n, &record);
+    if (record != nullptr) {
+        log_i("Record print: %s", record);
+        Keyboard.print(record);
+        free(record);
+    }
+}
+
+void printSaved(size_t n) {
+    RecordHeader header;
+    char* record = nullptr;
+    readRecordRaw(n, &record, &header);
+    if (record != nullptr) {
+        log_i("Record print: %s", record);
+        Keyboard.print(record);
+        free(record);
+    }
 }
 
 //?##################################################################################
@@ -329,7 +371,8 @@ void cmdDeleteFile(const char* arg) { deleteFile(arg); }
 void cmdAddEncrypt(const char* arg) { appendEncryptedRecord(arg); }
 
 void cmdGetEncrypt(const char* arg) {
-    char* text;
-    readEncryptedRecord(atoi(arg), text);
-    free(text);
+    char* text = nullptr;
+    readEncryptedRecord(atoi(arg), &text);
+    if (text)
+        free(text);
 }

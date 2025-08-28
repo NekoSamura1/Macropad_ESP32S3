@@ -11,8 +11,9 @@
         "string_view": "cpp",
         "cmath": "cpp"
     },
-    "C_Cpp.clang_format_fallbackStyle": "{ Based ob style: Google, ColumnLimit: 2000, IndentWidth: 4, PointerAlignment: Left, IndentCaseLabels:false }",
-    "C_Cpp.vcFormat.newLine.beforeOpenBrace.function": "newLine",
+    // "C_Cpp.clang_format_fallbackStyle": "{ Based ob style: Google, ColumnLimit: 2000, IndentWidth: 4, PointerAlignment: Left, IndentCaseLabels:false }",
+    // "C_Cpp.vcFormat.newLine.beforeOpenBrace.function": "newLine",
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
+    // "C_Cpp.clang_format_fallbackStyle": "",
 }

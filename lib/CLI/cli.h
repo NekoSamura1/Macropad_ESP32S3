@@ -13,6 +13,5 @@ struct Command {
     void (*function)(const char* arg);
 };
 
-
 void initCLI(HardwareSerial* _Serial_Cli, const Command* const command, const size_t size);
 void processCLI(char* inputBuffer, const size_t bufferSize, const char* const prefix);

@@ -1,4 +1,6 @@
 #include "main.h"
+// clang-format off or /* clang-format off */
+// clang-format on or /* clang-format on */
 
 TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
 uint16_t buttonState = 0;
@@ -227,7 +229,6 @@ void mainSystem(void* args) {
             processCLI(inputBuffer, sizeof(inputBuffer), deviceName); //! fixme should be in "mode off"
             break;
         }
-
 
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }

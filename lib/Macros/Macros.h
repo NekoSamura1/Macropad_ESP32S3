@@ -1,12 +1,11 @@
 #ifndef MACROS_H
 #define MACROS_H
 
-#include <stdint.h>
-#include <esp_timer.h>
 #include <esp32-hal-log.h>
+#include <esp_timer.h>
+#include <stdint.h>
 
-enum MacrosType
-{
+enum MacrosType {
     MACROS_CYCLIC,
     MACROS_CYCLIC_TOGGLE,
     MACROS_ONCE,
@@ -14,19 +13,18 @@ enum MacrosType
     MACROS_HOLD_TOGGLE,
 };
 
-class Macros
-{
-private:
+class Macros {
+  private:
     MacrosType macrosType;
     void (*macrosItself)();
-    void (*macrosOnStop)() = nullptr; //used only in HOLD modes
+    void (*macrosOnStop)() = nullptr; // used only in HOLD modes
     int64_t timer = 0;
     int64_t period;
     bool previousStatus = false;
     bool previousPoke = false;
     bool status = false;
 
-public:
+  public:
     Macros() = delete;
 
     /// @brief

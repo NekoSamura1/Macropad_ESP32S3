@@ -12,13 +12,13 @@ typedef struct {
     uint8_t iv[IV_SIZE];
 } RecordHeader;
 
-void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len);
+void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len, bool isEncrypted = false);
 
 /// @brief
 /// @param n record number
 /// @param data should be nullptr, allocates memory
 /// @param header should not be nullptr
-void readRecordRaw(uint32_t n, uint8_t** data, RecordHeader* const header);
+void readRecordRaw(uint32_t n, uint8_t** data, RecordHeader* const header, bool isEncrypted = false);
 void readRecordRaw(uint32_t n, char** data, RecordHeader* const header);
 
 void appendEncryptedRecord(const char* text);
@@ -28,5 +28,5 @@ void appendEncryptedRecord(const char* text);
 /// @param text should be nullptr, allocates memory
 void readEncryptedRecord(size_t number, char** text);
 
-void deleteRecord(uint32_t n);
+void deleteRecord(uint32_t n, bool isEncrypted = false);
 void deleteFile(const char* fileName);

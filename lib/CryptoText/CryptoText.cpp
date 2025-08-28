@@ -71,8 +71,11 @@ inline size_t calculate_padded_length(size_t len) { return ((len + 15) / 16) * 1
 //?##################################################################################
 //*         TEXT functions
 
-void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len) {
-    File file = SPIFFS.open(FILE_PATH, FILE_APPEND);
+void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len, bool isEncrypted) {
+    const char* filePath = isEncrypted ? FILE_ENC_PATH : FILE_RAW_PATH;
+    // std::string_view filePath = isEncrypted ? FILE_ENC_PATH : FILE_RAW_PATH;
+    File file = SPIFFS.open(filePath, FILE_APPEND);
+
     if (!file) {
         log_e("Failed to open file for appending");
         return;
@@ -98,8 +101,10 @@ void appendRecordRaw(const uint8_t* iv, const uint8_t* data, uint16_t data_len) 
     file.close();
 }
 
-void readRecordRaw(uint32_t n, uint8_t** data, RecordHeader* header) {
-    File file = SPIFFS.open(FILE_PATH, FILE_READ);
+void readRecordRaw(uint32_t n, uint8_t** data, RecordHeader* header, bool isEncrypted) {
+    const char* filePath = isEncrypted ? FILE_ENC_PATH : FILE_RAW_PATH;
+    File file = SPIFFS.open(filePath, FILE_APPEND);
+
     if (!file) {
         log_e("Failed to open file for reading");
         return;
@@ -169,8 +174,10 @@ void deleteFile(const char* fileName) {
     }
 }
 
-void deleteRecord(uint32_t n) {
-    File src = SPIFFS.open(FILE_PATH, FILE_READ);
+void deleteRecord(uint32_t n, bool isEncrypted) {
+    const char* filePath = isEncrypted ? FILE_ENC_PATH : FILE_RAW_PATH;
+    File src = SPIFFS.open(filePath, FILE_APPEND);
+
     if (!src) {
         log_e("Failed to open source file");
         return;
@@ -281,12 +288,12 @@ void deleteRecord(uint32_t n) {
     src.close();
     dst.close();
 
-    if (!SPIFFS.remove(FILE_PATH)) {
+    if (!SPIFFS.remove(filePath)) {
         log_e("Failed to delete original file");
         SPIFFS.remove(TEMP_FILE_PATH);
         return;
     }
-    if (!SPIFFS.rename(TEMP_FILE_PATH, FILE_PATH)) {
+    if (!SPIFFS.rename(TEMP_FILE_PATH, filePath)) {
         log_e("Failed to rename temp file");
         return;
     }
@@ -345,7 +352,7 @@ void appendEncryptedRecord(const char* text) {
     add_pkcs7_padding(padded, text_len);
 
     encrypt_data(padded_len, iv, padded, encrypted);
-    appendRecordRaw(iv, encrypted, padded_len);
+    appendRecordRaw(iv, encrypted, padded_len, true);
 
     free(padded);
     free(encrypted);

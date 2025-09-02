@@ -24,6 +24,25 @@
 #define ROW3 5
 #define ROW4 4
 #endif
+
+#define DEBOUNCE_TIME 20     // 20 мс
+#define LONG_PRESS_TIME 1000 // 1 секунда
+
+typedef enum {
+    BTN_STATE_RELEASED,   // Кнопка отпущена
+    BTN_STATE_PRESSED,    // Нажата
+    BTN_STATE_LONG_PRESS, // Долгое нажатие
+    BTN_STATE_DEBOUNCE,   // Дребезг
+} BtnState;
+
+typedef struct Button_t {
+    bool wasPressed;
+    bool wasReleased;
+    uint8_t buttNumber; // 0-16
+    BtnState state;
+    uint32_t last_time;
+} Button_t;
+
 /// @brief initialize pin modes for the button pad
 void buttonStateInit();
 

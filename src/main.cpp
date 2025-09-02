@@ -155,40 +155,17 @@ void mainSystem(void* args) {
             switch (currTab) // macros activation
             {
             case TAB_A:
-                for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
-                    if (macrosOnTabs[TAB_A][i] != nullptr) {
-                        macrosOnTabs[TAB_A][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
-                        macrosOnTabs[TAB_A][i]->runMacro();
-                    }
-                }
-                break;
-
             case TAB_B:
-                for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
-                    if (macrosOnTabs[TAB_B][i] != nullptr) {
-                        macrosOnTabs[TAB_B][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
-                        macrosOnTabs[TAB_B][i]->runMacro();
-                    }
-                }
-                break;
-
             case TAB_C:
+            case TAB_D: {
                 for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
-                    if (macrosOnTabs[TAB_C][i] != nullptr) {
-                        macrosOnTabs[TAB_C][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
-                        macrosOnTabs[TAB_C][i]->runMacro();
+                    if (macrosOnTabs[currTab][i] != nullptr) {
+                        macrosOnTabs[currTab][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
+                        macrosOnTabs[currTab][i]->runMacro();
                     }
                 }
                 break;
-
-            case TAB_D:
-                for (size_t i = 0; i < MACROS_COUNT_ON_TAB; i++) {
-                    if (macrosOnTabs[TAB_D][i] != nullptr) {
-                        macrosOnTabs[TAB_D][i]->pokeMacro(buttonState & 1 << macrosNumToButtonNum(i));
-                        macrosOnTabs[TAB_D][i]->runMacro();
-                    }
-                }
-                break;
+            }
             default:
                 break;
             }
@@ -215,9 +192,7 @@ void mainSystem(void* args) {
                     printEncrypted(n);
                     vTaskDelay(1000 / portTICK_PERIOD_MS);
                 }
-            }
-
-            if (buttonState & BUTTON_MASK(BUTTON_D)) {
+            } else if (buttonState & BUTTON_MASK(BUTTON_D)) {
                 uint16_t savedButtonState = buttonState & ~BUTTON_MASK(BUTTON_D);
                 size_t n = log2(savedButtonState);
                 if (n < BUTTON_COUNT) {
@@ -284,6 +259,37 @@ int_fast8_t buttonNumToMacrosNum(int_fast8_t num) {
     }
     return num;
 }
+
+
+// void handleSequenceInput(char key) {
+//   if (sequenceIndex < sizeof(inputSequence) - 1) {
+//     inputSequence[sequenceIndex++] = key;
+//     inputSequence[sequenceIndex] = '\0';
+//     digitalWrite(LED_BUILTIN, HIGH);
+//     delay(100);
+//     digitalWrite(LED_BUILTIN, LOW);
+//     log_i("Key %c entered", key);
+//   }
+//   if (key == '0' || key == '#') { // End sequence on '0' or '#'
+//     if (strcmp(inputSequence, correctSequence) == 0) {
+//       encryptedUnlocked = true;
+//       log_i("Encrypted records unlocked");
+//     } else {
+//       log_e("Incorrect sequence");
+//     }
+//     sequenceIndex = 0;
+//     memset(inputSequence, 0, sizeof(inputSequence));
+//   }
+// }
+
+// void lookupForPrintable(uint16_t localButtonState) {
+//     size_t n = log2(savedButtonState);
+//     if (n < BUTTON_COUNT) {
+//         log_i("printEncrypted(%d)", n);
+//         printEncrypted(n);
+//         vTaskDelay(1000 / portTICK_PERIOD_MS);
+//     }
+// }
 
 //?##################################################################################
 //*         macroses itself
@@ -369,9 +375,9 @@ void cmdDeleteRecord(const char* arg) {
 
 void cmdDeleteFile(const char* arg) { deleteFile(arg); }
 
-void cmdAddEncrypt(const char* arg) { appendEncryptedRecord(arg); }
+void cmdAddEncrypted(const char* arg) { appendEncryptedRecord(arg); }
 
-void cmdGetEncrypt(const char* arg) {
+void cmdReadEncrypted(const char* arg) {
     char* text = nullptr;
     readEncryptedRecord(atoi(arg), &text);
     if (text)
